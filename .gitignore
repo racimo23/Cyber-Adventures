@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.env
+
+# Streamlit secrets (NE JAMAIS committer)
+.streamlit/secrets.toml
+
+# Base de données locale
+saves/
+
+# IDE
+.vscode/
+.idea/

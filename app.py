@@ -1,12 +1,14 @@
+import time
+
 import streamlit as st
 
 from config import APP_TITLE, APP_ICON
-from core.game_state import init_game_state
-from data.scenarios import SCENARIOS
+from core.db import init_db, register_user, login_user, load_progress
+from core.game_state import init_game_state, restore_progress
+from data.scenarios import SCENARIOS, resolve_scenario
 from ui.layout import apply_global_styles, render_header
 from ui.game_view import render_game_view
 from ui.map_view import render_map
-from ui.start_screen import render_start_screen
 
 
 st.set_page_config(
@@ -15,45 +17,229 @@ st.set_page_config(
     layout="wide",
 )
 
+init_db()
 init_game_state()
 apply_global_styles()
 
-# ── Sidebar : accès administrateur ───────────────────────────────
-with st.sidebar:
-    with st.expander("🔐 Accès formateur", expanded=False):
-        admin_pw = st.text_input(
-            "Mot de passe",
-            type="password",
-            placeholder="Mot de passe admin…",
-            label_visibility="collapsed",
-        )
-        enter_admin = st.button("Entrer", use_container_width=True)
+# ── Écran d'authentification ───────────────────────────────────────
+if st.session_state.user_id is None:
+    if "auth_mode" not in st.session_state:
+        st.session_state.auth_mode = "register"
 
-    if enter_admin and admin_pw:
-        try:
-            expected = st.secrets["admin"]["password"]
-        except (KeyError, FileNotFoundError):
-            expected = "novacorp-admin"   # mot de passe par défaut si secrets.toml absent
-        if admin_pw == expected:
-            st.session_state.admin_mode = True
+    st.markdown("""
+    <style>
+    /* Page background */
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stHeader"] {
+        background: linear-gradient(145deg,#0B1D52 0%,#162B78 55%,#1E3FA0 100%) !important;
+    }
+    .main .block-container {
+        background: transparent !important;
+        padding-top: 4vh;
+        max-width: 1020px;
+    }
+    /* Right column: white card */
+    [data-testid="stColumn"]:last-of-type {
+        background: #FFFFFF !important;
+        border-radius: 20px !important;
+        box-shadow: 0 24px 64px rgba(0,0,0,0.28) !important;
+        padding: 36px 32px 32px !important;
+    }
+    /* Input fields */
+    [data-testid="stTextInput"] input {
+        border-radius: 10px !important;
+        border: 1.5px solid #E2E8F0 !important;
+        padding: 11px 14px !important;
+        font-size: 14px !important;
+        font-family: 'Inter',sans-serif !important;
+        background: #F8FAFC !important;
+        color: #1E293B !important;
+        transition: border-color .2s,box-shadow .2s !important;
+    }
+    [data-testid="stTextInput"] input:focus {
+        border-color: #2A52BE !important;
+        box-shadow: 0 0 0 3px rgba(42,82,190,.12) !important;
+        background: #fff !important;
+    }
+    [data-testid="stTextInput"] input::placeholder { color: #CBD5E1 !important; }
+    /* Inactive toggle button */
+    [data-testid="stBaseButton-secondary"] {
+        background: #F1F5F9 !important; color: #64748B !important;
+        box-shadow: none !important; border: 1.5px solid #E2E8F0 !important;
+    }
+    [data-testid="stBaseButton-secondary"]:hover {
+        background: #E2E8F0 !important; color: #374151 !important;
+        transform: none !important; box-shadow: none !important; filter: none !important;
+    }
+    /* Left panel */
+    .ap-left { padding: 32px 36px 32px 8px; display:flex; flex-direction:column;
+                justify-content:center; min-height:580px; }
+    .ap-logo  { font-size:52px; line-height:1; margin-bottom:18px; }
+    .ap-title { font-family:'Inter',sans-serif; font-size:28px; font-weight:800;
+                color:#fff; letter-spacing:-.5px; line-height:1.2; margin-bottom:12px; }
+    .ap-sub   { font-family:'Inter',sans-serif; font-size:14px;
+                color:rgba(255,255,255,.6); line-height:1.65; margin-bottom:28px; }
+    .ap-feat  { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
+    .ap-fi    { background:rgba(255,255,255,.13); border-radius:8px; width:34px; height:34px;
+                display:flex; align-items:center; justify-content:center;
+                font-size:17px; flex-shrink:0; }
+    .ap-ft    { font-family:'Inter',sans-serif; font-size:13px;
+                color:rgba(255,255,255,.85); line-height:1.5; }
+    .ap-ft strong { color:#fff; font-weight:600; }
+    .ap-ft small  { color:rgba(255,255,255,.5); }
+    .ap-hr    { border:none; border-top:1px solid rgba(255,255,255,.12); margin:24px 0; }
+    .ap-stats { display:flex; gap:28px; }
+    .ap-sv    { font-family:'Inter',sans-serif; font-size:24px;
+                font-weight:800; color:#fff; }
+    .ap-sl    { font-family:'Inter',sans-serif; font-size:11px;
+                color:rgba(255,255,255,.45); margin-top:2px; letter-spacing:.3px; }
+    /* Right panel labels */
+    .ap-form-title { font-family:'Inter',sans-serif; font-size:22px; font-weight:800;
+                     color:#1E293B; letter-spacing:-.3px; margin-bottom:3px; }
+    .ap-form-sub   { font-family:'Inter',sans-serif; font-size:13px;
+                     color:#94A3B8; margin-bottom:18px; }
+    .ap-label { font-family:'Inter',sans-serif; font-size:11px; font-weight:700;
+                color:#64748B; letter-spacing:.6px; text-transform:uppercase;
+                margin-bottom:4px; margin-top:12px; }
+    .ap-hint  { font-family:'Inter',sans-serif; font-size:11px;
+                color:#94A3B8; margin-top:12px; text-align:center; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    left, right = st.columns([1.05, 1], gap="medium")
+
+    # ── Panel gauche : branding ────────────────────────────────────
+    with left:
+        st.markdown(f"""
+        <div class="ap-left">
+          <div class="ap-logo">🛡️</div>
+          <div class="ap-title">{APP_TITLE}</div>
+          <div class="ap-sub">
+            Apprends à détecter les vraies menaces cyber en jouant
+            le rôle d'un(e) nouvel(le) employé(e) dans ton entreprise.
+          </div>
+          <div class="ap-feat">
+            <div class="ap-fi">📧</div>
+            <div class="ap-ft"><strong>Phishing &amp; vishing</strong><br>
+            <small>Emails frauduleux, appels malveillants</small></div>
+          </div>
+          <div class="ap-feat">
+            <div class="ap-fi">🔐</div>
+            <div class="ap-ft"><strong>Mots de passe &amp; accès</strong><br>
+            <small>Bonnes pratiques, gestion des identifiants</small></div>
+          </div>
+          <div class="ap-feat">
+            <div class="ap-fi">💾</div>
+            <div class="ap-ft"><strong>Clés USB &amp; shadow IT</strong><br>
+            <small>Périphériques non autorisés, logiciels pirates</small></div>
+          </div>
+          <div class="ap-feat">
+            <div class="ap-fi">🤖</div>
+            <div class="ap-ft"><strong>Deepfakes &amp; IA</strong><br>
+            <small>Nouvelles menaces liées à l'intelligence artificielle</small></div>
+          </div>
+          <hr class="ap-hr">
+          <div class="ap-stats">
+            <div><div class="ap-sv">16</div><div class="ap-sl">MISSIONS</div></div>
+            <div><div class="ap-sv">~45</div><div class="ap-sl">MINUTES</div></div>
+            <div><div class="ap-sv">3</div><div class="ap-sl">NIVEAUX</div></div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Panel droit : formulaire ───────────────────────────────────
+    with right:
+        mode = st.session_state.auth_mode
+        form_title = "Créer un compte" if mode == "register" else "Bon retour !"
+        form_sub   = "Commence ton parcours cybersécurité." if mode == "register" \
+                     else "Reprends là où tu t'es arrêté."
+
+        st.markdown(f"""
+        <div class="ap-form-title">{form_title}</div>
+        <div class="ap-form-sub">{form_sub}</div>
+        """, unsafe_allow_html=True)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            t1 = "primary" if mode == "register" else "secondary"
+            if st.button("Nouvelle partie", use_container_width=True, type=t1, key="btn_reg"):
+                st.session_state.auth_mode = "register"
+                st.rerun()
+        with c2:
+            t2 = "primary" if mode == "login" else "secondary"
+            if st.button("Reprendre", use_container_width=True, type=t2, key="btn_log"):
+                st.session_state.auth_mode = "login"
+                st.rerun()
+
+        err_msg = st.session_state.pop("auth_error", None)
+        if err_msg:
+            st.error(err_msg)
+
+        if mode == "register":
+            st.markdown('<div class="ap-label">Prénom / Nom</div>', unsafe_allow_html=True)
+            display_name = st.text_input("dn", placeholder="ex : Marie Dupont",
+                                          label_visibility="collapsed", key="inp_name")
         else:
-            st.error("Mot de passe incorrect.")
+            display_name = ""
 
-    if st.session_state.get("admin_mode"):
-        if st.button("↩ Quitter le dashboard", use_container_width=True):
-            st.session_state.admin_mode = False
+        st.markdown('<div class="ap-label">Pseudo</div>', unsafe_allow_html=True)
+        username = st.text_input("un", placeholder="ex : marie42",
+                                  label_visibility="collapsed", key=f"inp_user_{mode}")
+
+        st.markdown('<div class="ap-label">Mot de passe</div>', unsafe_allow_html=True)
+        password = st.text_input("pw", placeholder="min. 4 caractères", type="password",
+                                  label_visibility="collapsed", key=f"inp_pass_{mode}")
+
+        if mode == "register":
+            st.markdown(
+                '<div class="ap-label">Entreprise '
+                '<span style="font-weight:400;color:#CBD5E1">(optionnel)</span></div>',
+                unsafe_allow_html=True)
+            company = st.text_input("co", placeholder="NovaCorp",
+                                     label_visibility="collapsed", key="inp_company")
+        else:
+            company = ""
+
+        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+
+        btn_label = "Créer mon compte  →" if mode == "register" else "Se connecter  →"
+        if st.button(btn_label, use_container_width=True, key="btn_submit", type="primary"):
+            if mode == "register":
+                ok, err = register_user(username, password, display_name, company)
+                if not ok:
+                    st.session_state.auth_error = err
+                    st.rerun()
+                user, _ = login_user(username, password)
+            else:
+                user, err = login_user(username, password)
+                if user is None:
+                    st.session_state.auth_error = err
+                    st.rerun()
+
+            st.session_state.user_id      = user["id"]
+            st.session_state.display_name = user["display_name"]
+            st.session_state.company_name = user["company_name"]
+
+            saved = load_progress(user["id"])
+            if saved:
+                restore_progress(saved)
+
             st.rerun()
 
-# ── Dashboard administrateur (prioritaire sur le jeu) ────────────
-if st.session_state.get("admin_mode"):
-    from ui.admin_view import render_admin_view
-    render_admin_view()
+        if mode == "register":
+            st.markdown(
+                '<div class="ap-hint">Entreprise vide → <strong>NovaCorp</strong> par défaut</div>',
+                unsafe_allow_html=True)
     st.stop()
 
-# ── Écran d'accueil (avant la carte) ─────────────────────────────
-if not st.session_state.get("game_started"):
-    render_start_screen()
-    st.stop()
+# ── Transition de chargement (déclenchée par un clic sur la carte) ─
+if "_loading_msg" in st.session_state:
+    msg = st.session_state._loading_msg
+    del st.session_state._loading_msg
+    with st.spinner(msg):
+        time.sleep(0.85)
+    st.rerun()
 
 # ── Jeu principal ─────────────────────────────────────────────────
 if st.session_state.current_scene is None:
@@ -65,7 +251,7 @@ if st.session_state.current_scene is None:
 else:
     scene_index = st.session_state.scene_index
     if scene_index < len(SCENARIOS):
-        subtitle = SCENARIOS[scene_index]["subtitle"]
+        subtitle = resolve_scenario(SCENARIOS[scene_index])["subtitle"]
     else:
         subtitle = "Fin de l'aventure — Bilan de mission"
     render_header(title=f"{APP_ICON} {APP_TITLE}", subtitle=subtitle)

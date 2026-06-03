@@ -1,3 +1,32 @@
+import streamlit as st
+
+
+def _deep_replace(obj, old: str, new: str):
+    if isinstance(obj, str):
+        return obj.replace(old, new)
+    if isinstance(obj, dict):
+        return {k: _deep_replace(v, old, new) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_deep_replace(v, old, new) for v in obj]
+    return obj
+
+
+def resolve_scenario(scenario: dict) -> dict:
+    company = (st.session_state.get("company_name") or "NovaCorp").strip() or "NovaCorp"
+    player  = (st.session_state.get("display_name") or "Alice").strip() or "Alice"
+    # first word only for lowercase/email contexts (e.g. "Marie Dupont" → "marie")
+    player_lower = player.split()[0].lower()
+
+    result = scenario
+    if company != "NovaCorp":
+        result = _deep_replace(result, "NovaCorp", company)
+        result = _deep_replace(result, "novacorp", company.lower())
+    if player != "Alice":
+        result = _deep_replace(result, "Alice", player)
+        result = _deep_replace(result, "alice", player_lower)
+    return result
+
+
 SCENARIOS = [
     # ══════════════════════════════════════════════════════════════
     # FACILE — Jours 1, 3, 5, 7, 9, 11
@@ -9,6 +38,8 @@ SCENARIOS = [
         "category": "phishing",
         "difficulty": "Facile",
         "subtitle": "Jour 1 — Premier email d'activation chez NovaCorp",
+        "learn_more_url": "https://www.cybermalveillance.gouv.fr/tous-nos-contenus/actualites/comment-reconnaitre-un-mail-de-phishing-ou-dhameconnage",
+        "learn_more_title": "Cybermalveillance.gouv.fr — Comment reconnaître un email de phishing ?",
         "hero": {
             "emoji": "📧",
             "css_class": "hero-phishing",
@@ -62,7 +93,7 @@ SCENARIOS = [
             {
                 "label": "Cliquer sur le lien",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Tu as cliqué sur un lien de phishing.",
                 "consequence_title": "Compte compromis",
@@ -97,7 +128,7 @@ SCENARIOS = [
             {
                 "label": "Répondre avec ses identifiants",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Tu as transmis des informations sensibles par email.",
                 "consequence_title": "Identifiants exposés",
@@ -137,6 +168,8 @@ SCENARIOS = [
         "category": "physical_security",
         "difficulty": "Facile",
         "subtitle": "Jour 3 — Une clé USB dans le parking",
+        "learn_more_url": "https://odyssix.fr/blog/cybersecurite/cles-usb-peripheriques-vecteurs-attaque-physiques-2/",
+        "learn_more_title": "Odyssix — Clés USB : vecteurs d'attaques physiques, comment s'en protéger",
         "hero": {
             "emoji": "💾",
             "css_class": "hero-physical",
@@ -179,7 +212,7 @@ SCENARIOS = [
             {
                 "label": "La brancher sur mon PC pro pour identifier le propriétaire",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Brancher une clé inconnue, c'est risqué.",
                 "consequence_title": "Malware installé",
@@ -195,7 +228,7 @@ SCENARIOS = [
             },
             {
                 "label": "La remettre au service sécurité IT sans la brancher",
-                "score_delta": 7,
+                "score_delta": 5,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "La bonne réaction face à un support inconnu.",
@@ -213,7 +246,7 @@ SCENARIOS = [
             {
                 "label": "La brancher sur mon PC personnel chez moi ce soir",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Ton PC perso n'est pas protégé non plus.",
                 "consequence_title": "Réseau personnel compromis",
@@ -229,7 +262,7 @@ SCENARIOS = [
             },
             {
                 "label": "La déposer à l'accueil de l'immeuble",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu évites le danger immédiat mais tu transfères le risque.",
@@ -253,6 +286,8 @@ SCENARIOS = [
         "category": "password",
         "difficulty": "Facile",
         "subtitle": "Jour 5 — Création du mot de passe CRM",
+        "learn_more_url": "https://www.it-connect.fr/politique-de-mot-de-passe-comment-appliquer-les-bonnes-pratiques-de-lanssi/",
+        "learn_more_title": "IT-Connect — Politique de mot de passe : les bonnes pratiques de l'ANSSI",
         "hero": {
             "emoji": "🔑",
             "css_class": "hero-password",
@@ -299,7 +334,7 @@ SCENARIOS = [
             {
                 "label": "Utiliser 'NovaCorp2024!'",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Ce mot de passe est trop prévisible pour un accès critique.",
                 "consequence_title": "Compte CRM compromis",
@@ -350,7 +385,7 @@ SCENARIOS = [
             {
                 "label": "Réutiliser mon mot de passe habituel — il est déjà fort",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Un bon mot de passe réutilisé partout reste une bombe à retardement.",
                 "consequence_title": "Credential stuffing réussi",
@@ -375,6 +410,8 @@ SCENARIOS = [
         "category": "clean_desk",
         "difficulty": "Facile",
         "subtitle": "Jour 7 — 18h, Alice s'apprête à quitter le bureau",
+        "learn_more_url": "https://anny.co/fr/blog/clean-desk-policy-order-and-safety-in-the-modern-workplace",
+        "learn_more_title": "Anny — Clean Desk Policy : ordre et sécurité dans le lieu de travail moderne",
         "hero": {
             "emoji": "🗂️",
             "css_class": "hero-clean-desk",
@@ -422,7 +459,7 @@ SCENARIOS = [
             {
                 "label": "Partir en laissant le bureau tel quel — personne ne regardera",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 3,
                 "outcome": "danger",
                 "feedback": "Le bureau non sécurisé représente une violation de la politique interne.",
                 "consequence_title": "Violation de la Clean Desk Policy",
@@ -440,7 +477,7 @@ SCENARIOS = [
             },
             {
                 "label": "Ranger le badge, jeter le post-it, fermer le dossier et verrouiller le PC",
-                "score_delta": 7,
+                "score_delta": 4,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "60 secondes de rangement pour éviter une semaine d'incident — ça vaut le coup.",
@@ -459,7 +496,7 @@ SCENARIOS = [
             },
             {
                 "label": "Cacher le dossier sous d'autres papiers et partir vite",
-                "score_delta": 4,
+                "score_delta": 2,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Un dossier caché reste accessible — et le post-it et le badge sont toujours là.",
@@ -477,7 +514,7 @@ SCENARIOS = [
             },
             {
                 "label": "Appeler un collègue pour qu'il range à sa place",
-                "score_delta": 4,
+                "score_delta": 2,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu délègues la sécurité de tes accès à quelqu'un d'autre.",
@@ -502,6 +539,8 @@ SCENARIOS = [
         "category": "physical_security",
         "difficulty": "Facile",
         "subtitle": "Jour 9 — Quelqu'un regarde ton écran dans le train",
+        "learn_more_url": "https://www.manageengine.com/fr/blog/general/shoulder-surfing-risques-consequences-et-solutions-pour-se-proteger.html",
+        "learn_more_title": "ManageEngine — Shoulder surfing : risques, conséquences et solutions",
         "hero": {
             "emoji": "👁️",
             "css_class": "hero-physical",
@@ -549,7 +588,7 @@ SCENARIOS = [
             {
                 "label": "Continuer à travailler — j'en ai besoin pour la réunion",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 3,
                 "outcome": "danger",
                 "feedback": "Tu as exposé des données confidentielles dans un lieu public.",
                 "consequence_title": "Données visibles photographiées",
@@ -567,7 +606,7 @@ SCENARIOS = [
             },
             {
                 "label": "Fermer l'écran et travailler sur des documents non sensibles",
-                "score_delta": 7,
+                "score_delta": 5,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Bonne décision — les données confidentielles restent confidentielles.",
@@ -585,7 +624,7 @@ SCENARIOS = [
             },
             {
                 "label": "Réduire la luminosité de l'écran au minimum",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Ça réduit la visibilité mais ne protège pas vraiment.",
@@ -603,7 +642,7 @@ SCENARIOS = [
             },
             {
                 "label": "Se retourner et confronter le passager directement",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "La confrontation crée une tension sans protéger les données déjà vues.",
@@ -628,6 +667,8 @@ SCENARIOS = [
         "category": "shadow_it",
         "difficulty": "Facile",
         "subtitle": "Jour 11 — L'outil non approuvé qui semble pratique",
+        "learn_more_url": "https://lemonlearning.com/fr/blog/les-risques-du-shadow-it-pour-la-cybers%C3%A9curit%C3%A9",
+        "learn_more_title": "Lemon Learning — Les risques du Shadow IT pour la cybersécurité",
         "hero": {
             "emoji": "☁️",
             "css_class": "hero-shadow-it",
@@ -677,7 +718,7 @@ SCENARIOS = [
             {
                 "label": "Utiliser le site recommandé par Bob — c'est rapide",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Le contrat confidentiel vient d'être uploadé sur un serveur tiers non contrôlé.",
                 "consequence_title": "Violation de la clause de confidentialité",
@@ -697,7 +738,7 @@ SCENARIOS = [
             },
             {
                 "label": "Ouvrir le PDF directement avec Microsoft Word",
-                "score_delta": 7,
+                "score_delta": 5,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "L'outil Office 365 intégré fait le travail sans quitter l'environnement NovaCorp.",
@@ -716,7 +757,7 @@ SCENARIOS = [
             },
             {
                 "label": "Demander à l'IT de convertir le fichier à sa place",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Sécurisé, mais le service IT n'est pas un service de conversion de fichiers.",
@@ -735,7 +776,7 @@ SCENARIOS = [
             {
                 "label": "Utiliser le site recommandé mais supprimer le fichier après",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Supprimer côté client ne supprime pas les données côté serveur.",
                 "consequence_title": "Fausse sécurité",
@@ -764,6 +805,8 @@ SCENARIOS = [
         "difficulty": "Moyen",
         "timer": 45,
         "subtitle": "Jour 14 — Un appel inattendu du « support IT »",
+        "learn_more_url": "https://www.adista.fr/blog/cybersecurite-vishing-entreprise-arnaque-telephonique/",
+        "learn_more_title": "Adista — Vishing en entreprise : comprendre et déjouer l'arnaque téléphonique",
         "hero": {
             "emoji": "📞",
             "css_class": "hero-vishing",
@@ -810,7 +853,7 @@ SCENARIOS = [
             {
                 "label": "Lui donner mon mot de passe pour l'aider",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Aucun technicien légitime ne demande un mot de passe par téléphone.",
                 "consequence_title": "Accès total compromis",
@@ -826,7 +869,7 @@ SCENARIOS = [
             },
             {
                 "label": "Raccrocher et rappeler via l'annuaire officiel",
-                "score_delta": 7,
+                "score_delta": 6,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Vérifier avant d'agir — le bon réflexe.",
@@ -843,7 +886,7 @@ SCENARIOS = [
             },
             {
                 "label": "Donner mon identifiant mais pas le mot de passe",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Mieux, mais ton identifiant a de la valeur pour l'attaquant.",
@@ -861,7 +904,7 @@ SCENARIOS = [
             {
                 "label": "Lui demander d'envoyer un email officiel pour confirmer",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "L'attaquant peut aussi falsifier un email.",
                 "consequence_title": "Vishing + Phishing enchaînés",
@@ -885,6 +928,8 @@ SCENARIOS = [
         "category": "malware",
         "difficulty": "Moyen",
         "subtitle": "Jour 17 — Un popup suspect bloque l'écran d'Alice",
+        "learn_more_url": "https://cybersecurite.orange.fr/la-cybersecurite/protection-des-donnees/faux-messages-de-mise-a-jour-quand-un-clic-suffit-pour-infecter-votre-ordinateur.html",
+        "learn_more_title": "Orange Cybersécurité — Faux messages de mise à jour : un clic peut tout infecter",
         "hero": {
             "emoji": "☠️",
             "css_class": "hero-malware",
@@ -1012,6 +1057,8 @@ SCENARIOS = [
         "category": "wifi_mitm",
         "difficulty": "Moyen",
         "subtitle": "Jour 20 — En déplacement dans un café",
+        "learn_more_url": "https://www.assurances-casterot.fr/man-in-the-middle/",
+        "learn_more_title": "Casterot — Man in the Middle : les dangers du WiFi public expliqués",
         "hero": {
             "emoji": "📶",
             "css_class": "hero-wifi",
@@ -1061,7 +1108,7 @@ SCENARIOS = [
             {
                 "label": "Se connecter et travailler directement",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Tu as exposé des données confidentielles sur un réseau public.",
                 "consequence_title": "Données interceptées",
@@ -1077,7 +1124,7 @@ SCENARIOS = [
             },
             {
                 "label": "Activer le VPN NovaCorp avant de se connecter",
-                "score_delta": 7,
+                "score_delta": 6,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Bonne pratique — le VPN chiffre tout le trafic.",
@@ -1094,7 +1141,7 @@ SCENARIOS = [
             },
             {
                 "label": "Désactiver le mode avion et utiliser son 4G",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "La 4G est plus sûre mais sans VPN tu contournes la charte.",
@@ -1111,7 +1158,7 @@ SCENARIOS = [
             },
             {
                 "label": "Créer un partage de connexion avec son téléphone",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Mieux que le WiFi public, mais sans VPN tu restes hors charte.",
@@ -1135,6 +1182,8 @@ SCENARIOS = [
         "category": "ai_leak",
         "difficulty": "Moyen",
         "subtitle": "Jour 23 — Un raccourci tentant avec l'IA",
+        "learn_more_url": "https://www.riskinsight-wavestone.com/2025/05/fuite-de-donnees-comment-les-chatbots-dia-peuvent-faire-fuiter-vos-informations/",
+        "learn_more_title": "Wavestone — Comment les chatbots d'IA peuvent faire fuiter vos données",
         "hero": {
             "emoji": "🤖",
             "css_class": "hero-ai",
@@ -1184,7 +1233,7 @@ SCENARIOS = [
             {
                 "label": "Coller le rapport complet dans ChatGPT",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Des données confidentielles viennent de quitter le périmètre de NovaCorp.",
                 "consequence_title": "Fuite de données vers un tiers",
@@ -1202,7 +1251,7 @@ SCENARIOS = [
             },
             {
                 "label": "Utiliser l'outil IA interne approuvé par NovaCorp",
-                "score_delta": 7,
+                "score_delta": 6,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Le bon outil pour le bon usage — les données restent dans le périmètre.",
@@ -1220,7 +1269,7 @@ SCENARIOS = [
             },
             {
                 "label": "Anonymiser les données sensibles avant de les coller",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Mieux, mais l'anonymisation manuelle est rarement complète.",
@@ -1238,7 +1287,7 @@ SCENARIOS = [
             },
             {
                 "label": "Résumer le document manuellement sans IA",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Sécurisé, mais tu n'as pas utilisé les ressources approuvées disponibles.",
@@ -1264,6 +1313,8 @@ SCENARIOS = [
         "category": "osint",
         "difficulty": "Moyen",
         "subtitle": "Jour 26 — Une demande de connexion trop belle pour être vraie",
+        "learn_more_url": "https://www.journaldunet.com/cybersecurite/1547881-faux-recruteurs-investisseurs-belles-femmes-comment-linkedin-est-devenu-le-terrain-de-jeu-favori-des-cyberespions/",
+        "learn_more_title": "Journal du Net — Comment LinkedIn est devenu le terrain de jeu des cyberespions",
         "hero": {
             "emoji": "🔍",
             "css_class": "hero-osint",
@@ -1311,7 +1362,7 @@ SCENARIOS = [
             {
                 "label": "Accepter et lui envoyer le CV avec mes projets actuels",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Tu viens de livrer des informations stratégiques à un concurrent potentiel.",
                 "consequence_title": "Espionnage industriel",
@@ -1330,7 +1381,7 @@ SCENARIOS = [
             },
             {
                 "label": "Vérifier le profil et signaler à la DSI avant de répondre",
-                "score_delta": 7,
+                "score_delta": 5,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Bonne vigilance — vérifier avant d'agir protège l'entreprise.",
@@ -1349,7 +1400,7 @@ SCENARIOS = [
             },
             {
                 "label": "Accepter la connexion sans donner d'informations",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu lui donnes accès à ton réseau et tes informations publiques.",
@@ -1367,7 +1418,7 @@ SCENARIOS = [
             },
             {
                 "label": "Ignorer et bloquer le profil sans le signaler",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu te protèges, mais tes collègues restent exposés.",
@@ -1392,6 +1443,8 @@ SCENARIOS = [
         "category": "physical_security",
         "difficulty": "Moyen",
         "subtitle": "Jour 29 — Un inconnu veut accéder à la zone sécurisée",
+        "learn_more_url": "https://www.metacompliance.com/fr/blog/cyber-security-awareness/c-est-quoi-tailgating-au-travail",
+        "learn_more_title": "MetaCompliance — C'est quoi le tailgating au travail et comment s'en protéger ?",
         "hero": {
             "emoji": "🚪",
             "css_class": "hero-physical",
@@ -1446,7 +1499,7 @@ SCENARIOS = [
             {
                 "label": "Tenir la porte et le laisser entrer — il a l'air légitime",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Tu viens de laisser entrer un inconnu dans une zone sécurisée.",
                 "consequence_title": "Intrusion physique réussie",
@@ -1464,7 +1517,7 @@ SCENARIOS = [
             },
             {
                 "label": "Lui demander poliment de badger ou d'appeler son contact",
-                "score_delta": 7,
+                "score_delta": 6,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Bonne posture — appliquer la règle sans agressivité.",
@@ -1483,7 +1536,7 @@ SCENARIOS = [
             },
             {
                 "label": "L'accompagner à l'accueil pour régulariser son accès",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Mieux que de le laisser entrer, mais tu perds de vue la zone pendant ce temps.",
@@ -1502,7 +1555,7 @@ SCENARIOS = [
             {
                 "label": "Le laisser entrer car il a l'air d'un collègue qu'on n'a pas encore rencontré",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "L'apparence n'est pas une preuve d'identité.",
                 "consequence_title": "Intrusion par social engineering",
@@ -1526,6 +1579,8 @@ SCENARIOS = [
         "category": "clean_desk",
         "difficulty": "Moyen",
         "subtitle": "Jour 32 — Un contrat confidentiel oublié dans la salle d'impression",
+        "learn_more_url": "https://profficium.fr/blog/rgpd-impression/",
+        "learn_more_title": "Profficium — RGPD et impression : ce que les entreprises doivent savoir",
         "hero": {
             "emoji": "🖨️",
             "css_class": "hero-clean-desk",
@@ -1576,7 +1631,7 @@ SCENARIOS = [
             {
                 "label": "Récupérer les feuilles et faire comme si rien ne s'était passé",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Ne pas signaler une exposition de données est une faute grave.",
                 "consequence_title": "Violation RGPD non déclarée",
@@ -1594,7 +1649,7 @@ SCENARIOS = [
             },
             {
                 "label": "Récupérer les feuilles, signaler au DPO et utiliser l'impression sécurisée à l'avenir",
-                "score_delta": 7,
+                "score_delta": 5,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Réaction exemplaire : action immédiate + signalement + mesure corrective.",
@@ -1613,7 +1668,7 @@ SCENARIOS = [
             },
             {
                 "label": "Demander à Bob de vérifier si quelqu'un a lu le document",
-                "score_delta": 4,
+                "score_delta": 3,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Mieux que rien, mais Bob n'est pas le bon interlocuteur.",
@@ -1633,7 +1688,7 @@ SCENARIOS = [
             {
                 "label": "Annuler le travail d'impression depuis le PC pour effacer les traces",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Le document est déjà imprimé — annuler le job ne change rien.",
                 "consequence_title": "Action inefficace",
@@ -1662,6 +1717,8 @@ SCENARIOS = [
         "difficulty": "Difficile",
         "timer": 60,
         "subtitle": "Jour 35 — Un WhatsApp du « PDG »",
+        "learn_more_url": "https://www.economie.gouv.fr/dgccrf/les-fiches-pratiques/se-premunir-contre-lescroquerie-aux-faux-ordres-de-virement-ou-arnaque",
+        "learn_more_title": "Économie.gouv.fr — Se prémunir contre l'escroquerie aux faux ordres de virement",
         "hero": {
             "emoji": "💸",
             "css_class": "hero-ceo-fraud",
@@ -1712,7 +1769,7 @@ SCENARIOS = [
             {
                 "label": "Effectuer le virement immédiatement",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 8,
                 "outcome": "danger",
                 "feedback": "Tu viens de tomber dans un piège de fraude au président.",
                 "consequence_title": "47 500 € perdus",
@@ -1728,7 +1785,7 @@ SCENARIOS = [
             },
             {
                 "label": "Appeler le PDG sur son numéro officiel pour vérifier",
-                "score_delta": 7,
+                "score_delta": 10,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Vérification multi-canal — le bon réflexe.",
@@ -1746,7 +1803,7 @@ SCENARIOS = [
             },
             {
                 "label": "Transférer la demande à la comptabilité pour qu'elle gère",
-                "score_delta": 4,
+                "score_delta": 5,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu propagules la demande sans vérifier.",
@@ -1763,7 +1820,7 @@ SCENARIOS = [
             },
             {
                 "label": "Demander au PDG de confirmer la demande par email d'entreprise",
-                "score_delta": 4,
+                "score_delta": 5,
                 "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Un email peut aussi être falsifié avec un domaine similaire.",
@@ -1789,6 +1846,8 @@ SCENARIOS = [
         "difficulty": "Difficile",
         "timer": 30,
         "subtitle": "Jour 38 — Des notifications MFA arrivent sans que tu te connectes",
+        "learn_more_url": "https://www.proofpoint.com/fr/threat-reference/mfa-fatigue-attack",
+        "learn_more_title": "Proofpoint — Attaque par fatigue MFA : comprendre et se protéger",
         "hero": {
             "emoji": "📲",
             "css_class": "hero-vishing",
@@ -1836,7 +1895,7 @@ SCENARIOS = [
             {
                 "label": "Accepter une notification pour que ça s'arrête",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 7,
                 "outcome": "danger",
                 "feedback": "Tu viens d'ouvrir la porte à l'attaquant.",
                 "consequence_title": "Compte compromis par fatigue MFA",
@@ -1854,7 +1913,7 @@ SCENARIOS = [
             },
             {
                 "label": "Refuser toutes les notifications, changer le mot de passe et alerter l'IT",
-                "score_delta": 7,
+                "score_delta": 8,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Réaction exemplaire face à une attaque MFA.",
@@ -1893,7 +1952,7 @@ SCENARIOS = [
             {
                 "label": "Accepter une notification en pensant que c'est un bug système",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 7,
                 "outcome": "danger",
                 "feedback": "Un bug système n'envoie pas de demandes MFA depuis un appareil inconnu.",
                 "consequence_title": "Compromission par rationalisation",
@@ -1918,6 +1977,8 @@ SCENARIOS = [
         "category": "malware",
         "difficulty": "Difficile",
         "subtitle": "Jour 42 — Un email d'alerte de sécurité qui semble urgent",
+        "learn_more_url": "https://www.jedha.co/formation-cybersecurite/tout-savoir-sur-le-scareware-l-arnaque-au-faux-virus",
+        "learn_more_title": "Jedha — Tout savoir sur le scareware : l'arnaque au faux virus",
         "hero": {
             "emoji": "🦠",
             "css_class": "hero-malware",
@@ -1978,7 +2039,7 @@ SCENARIOS = [
             {
                 "label": "Désactiver l'antivirus officiel et installer le patch proposé",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 7,
                 "outcome": "danger",
                 "feedback": "Tu viens d'installer un malware en désactivant ta protection.",
                 "consequence_title": "Poste compromis — malware installé",
@@ -1997,7 +2058,7 @@ SCENARIOS = [
             },
             {
                 "label": "Ne pas cliquer et appeler l'IT via le numéro officiel",
-                "score_delta": 7,
+                "score_delta": 8,
                 "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Vérification par canal officiel — la bonne réaction.",
@@ -2037,7 +2098,7 @@ SCENARIOS = [
             {
                 "label": "Désactiver temporairement l'AV 'juste pour voir' ce que le patch fait",
                 "score_delta": 0,
-                "risk_delta": 6,
+                "risk_delta": 7,
                 "outcome": "danger",
                 "feedback": "Désactiver son antivirus pour tester un fichier suspect — l'erreur classique.",
                 "consequence_title": "Infection confirmée",

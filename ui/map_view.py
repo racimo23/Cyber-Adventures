@@ -1,10 +1,21 @@
+import random
+
 import streamlit as st
 
 from core.game_state import select_scene
 from core.scoring import get_risk_label, SCORE_MAX, RISK_MAX
-from data.scenarios import SCENARIOS
+from data.scenarios import SCENARIOS, resolve_scenario
 
 _NODES_PER_ROW = 4
+
+_LOADING_MSGS = [
+    "Connexion au réseau NovaCorp…",
+    "Déchiffrement des communications…",
+    "Chargement de l'environnement de travail…",
+    "Authentification de l'utilisateur Alice…",
+    "Récupération des données de mission…",
+    "Initialisation de la simulation de sécurité…",
+]
 
 _OUTCOME_STYLE = {
     "success": {"bg": "#F0FDF4", "border": "#86EFAC", "icon": "✅", "label": "Succès"},
@@ -26,7 +37,25 @@ def _chunks(lst: list, n: int):
 
 # ── Header ─────────────────────────────────────────────────────────
 
+def _render_logout() -> None:
+    company = st.session_state.get("company_name", "NovaCorp")
+    username = st.session_state.get("username_display", "")
+    col_info, col_btn = st.columns([5, 1])
+    with col_info:
+        st.markdown(
+            f'<div style="font-family:Inter,sans-serif;font-size:13px;color:#94A3B8;'
+            f'padding:6px 0;">🏢 {company}</div>',
+            unsafe_allow_html=True,
+        )
+    with col_btn:
+        if st.button("🚪 Quitter", use_container_width=True, key="logout_btn"):
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            st.rerun()
+
+
 def _render_map_header() -> None:
+    _render_logout()
     completed = len(st.session_state.completed_scenes)
     total = len(SCENARIOS)
     score = st.session_state.score
@@ -125,6 +154,11 @@ def _render_node(scene_idx: int, scenario: dict) -> None:
         st.markdown(f'<div class="nbm nbm-{outcome}"></div>', unsafe_allow_html=True)
         if st.button(label, key=f"map_btn_{scene_idx}", use_container_width=True):
             select_scene(scene_idx)
+            company = st.session_state.get("company_name") or "NovaCorp"
+            player  = st.session_state.get("display_name") or "Alice"
+            st.session_state._loading_msg = (
+                random.choice(_LOADING_MSGS).replace("NovaCorp", company).replace("Alice", player)
+            )
             st.rerun()
 
     elif is_unlocked:
@@ -138,6 +172,11 @@ def _render_node(scene_idx: int, scenario: dict) -> None:
         st.markdown(f'<div class="nbm nbm-{state}"></div>', unsafe_allow_html=True)
         if st.button(label, key=f"map_btn_{scene_idx}", use_container_width=True):
             select_scene(scene_idx)
+            company = st.session_state.get("company_name") or "NovaCorp"
+            player  = st.session_state.get("display_name") or "Alice"
+            st.session_state._loading_msg = (
+                random.choice(_LOADING_MSGS).replace("NovaCorp", company).replace("Alice", player)
+            )
             st.rerun()
 
     else:
@@ -160,11 +199,12 @@ def _render_node(scene_idx: int, scenario: dict) -> None:
 # ── Horizontal connector (arrow between nodes in a row) ───────────
 
 def _render_h_connector(unlocked: bool) -> None:
-    color = "#93C5FD" if unlocked else "#CBD5E1"
+    line_cls   = "connector-active" if unlocked else "connector-locked"
+    arrow_color = "#93C5FD" if unlocked else "#CBD5E1"
     st.markdown(f"""
     <div class="map-node-connector-h">
-        <div class="connector-h-line" style="background:{color};"></div>
-        <div class="connector-h-arrow" style="color:{color};">▶</div>
+        <div class="connector-h-line {line_cls}"></div>
+        <div class="connector-h-arrow" style="color:{arrow_color};">▶</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -177,14 +217,14 @@ def _render_v_connector(row_idx: int, rows: list) -> None:
     last_prev    = prev_row[-1][0]  # scene_idx of last node in prev row
     is_visible   = last_prev < st.session_state.max_unlocked_scene
 
-    line_color  = "#93C5FD" if is_visible else "#E2E8F0"
+    line_cls    = "connector-active" if is_visible else "connector-locked"
     arrow_color = "#2A52BE" if is_visible else "#CBD5E1"
 
     st.markdown(f"""
     <div class="map-row-v-connector">
-        <div class="v-connector-line" style="background:{line_color};"></div>
+        <div class="v-connector-line {line_cls}"></div>
         <div class="v-connector-arrow" style="color:{arrow_color};">↓</div>
-        <div class="v-connector-line" style="background:{line_color};"></div>
+        <div class="v-connector-line {line_cls}"></div>
     </div>
     """, unsafe_allow_html=True)
 

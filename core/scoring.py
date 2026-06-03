@@ -3,9 +3,10 @@ from config import (
     RISK_MEDIUM_THRESHOLD,
 )
 
-# Score max = 16 × 7 = 112  |  Risk max = 16 × 6 = 96
-SCORE_MAX = 112
-RISK_MAX  = 96
+# Score max = somme des succès pondérés sur 16 scènes = 100
+# Risk max  = somme des risques danger pondérés sur 16 scènes = 80
+SCORE_MAX = 100
+RISK_MAX  = 80
 
 # risk_delta in scenarios is already the exact contribution (6 for danger, 0 otherwise)
 _RISK_SCALE = 1.0

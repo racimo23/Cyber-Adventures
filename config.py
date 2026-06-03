@@ -5,14 +5,14 @@ COMPANY_NAME = "NovaCorp"
 INITIAL_SECURITY_SCORE = 0
 INITIAL_HUMAN_RISK = 0
 
-# Risk thresholds (0–96 scale: 16 scenes × 6 max risk each)
-RISK_LOW_THRESHOLD = 34
-RISK_MEDIUM_THRESHOLD = 62
+# Risk thresholds (0–80 scale: weighted danger risk per scene, max 80)
+RISK_LOW_THRESHOLD = 28
+RISK_MEDIUM_THRESHOLD = 52
 
-# Each scene: success = +7 pts, neutral = +4 pts, danger = +0 pts
-# 16 scenes × 7 pts max = 112
-SCORE_SUCCESS = 7
-SCORE_NEUTRAL = 4
+# Score values are weighted per scene (not uniform) — see scenarios.py
+# Max score = 100, max risk = 80
+SCORE_SUCCESS = 7  # reference only; actual values vary per scene
+SCORE_NEUTRAL = 4  # reference only
 SCORE_DANGER = 0
 
 DEPARTMENTS = [

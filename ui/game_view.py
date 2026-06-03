@@ -4,9 +4,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from core.scoring import apply_score_change, get_risk_label, get_player_profile, SCORE_MAX, RISK_MAX
-from core.game_state import set_outcome, reset_scene, advance_scene, return_to_map
-from core.db import save_session
-from data.scenarios import SCENARIOS
+from core.game_state import set_outcome, reset_scene, advance_scene, return_to_map, reset_game_progress
+from data.scenarios import SCENARIOS, resolve_scenario
 from ui.cards import (
     render_hero_card,
     render_score_card,
@@ -26,24 +25,6 @@ from ui.cards import (
 
 # ── Helpers ───────────────────────────────────────────────────────
 
-_DISTRACTION_TOASTS = [
-    ("💬", "Slack — Alice, tu as 5 min pour un point rapide ?"),
-    ("📅", "Rappel : Réunion Projet Alpha dans 10 minutes"),
-    ("📧", "Nouveau mail : Re: Budget Q4 — Urgent"),
-    ("📲", "Teams — Bob : t'as vu le mail de la direction ?"),
-    ("🔔", "Rappel : Rapport mensuel à envoyer avant 17h"),
-    ("💬", "Slack — RH : Formulaire congés à compléter aujourd'hui"),
-]
-
-
-def _maybe_fire_distraction_toasts(scene_index: int) -> None:
-    key = f"toasts_fired_{scene_index}"
-    if st.session_state.get(key):
-        return
-    st.session_state[key] = True
-    if random.random() < 0.30:
-        for icon, msg in random.sample(_DISTRACTION_TOASTS, random.randint(1, 2)):
-            st.toast(msg, icon=icon)
 
 
 def _get_shuffled_choices(choices: list) -> list:
@@ -71,6 +52,22 @@ def _render_artifact(artifact: dict) -> None:
         render_wifi_card(artifact["icon"], artifact["ssid"], artifact["detail"], artifact["security"])
     elif kind == "form":
         render_form_card(artifact["title"], artifact["field_label"], artifact["field_value"], artifact["hint"])
+
+
+def _render_learn_more(url: str, title: str) -> None:
+    st.markdown(
+        f'<a href="{url}" target="_blank" rel="noopener noreferrer" class="learn-more-link">'
+        f'<div class="learn-more-card">'
+        f'<div class="learn-more-icon">📚</div>'
+        f'<div class="learn-more-body">'
+        f'<div class="learn-more-label">Pour aller plus loin</div>'
+        f'<div class="learn-more-title">{title}</div>'
+        f'</div>'
+        f'<div class="learn-more-arrow">↗</div>'
+        f'</div>'
+        f'</a>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_indices(indices: list) -> None:
@@ -211,23 +208,6 @@ def _render_endgame() -> None:
     nb_neutral = outcomes.count("neutral")
     nb_danger  = outcomes.count("danger")
 
-    # ── Sauvegarde Supabase (une seule fois, si campaign_id présent) ──
-    campaign_id = st.session_state.get("campaign_id", "")
-    if campaign_id and not st.session_state.get("session_saved"):
-        saved = save_session(
-            player_name  = st.session_state.get("player_name", "Anonyme"),
-            campaign_id  = campaign_id,
-            score        = score,
-            risk         = risk,
-            profile_title = profile["title"],
-            profile_badge = profile["badge"],
-            nb_success   = nb_success,
-            nb_neutral   = nb_neutral,
-            nb_danger    = nb_danger,
-        )
-        if saved:
-            st.session_state.session_saved = True
-
     score_pct = round(score / SCORE_MAX * 100)
     risk_pct  = round(risk / RISK_MAX * 100)
 
@@ -263,18 +243,6 @@ def _render_endgame() -> None:
     )
     st.markdown(html, unsafe_allow_html=True)
 
-    # ── Confirmation de transmission des résultats ────────────────
-    if st.session_state.get("campaign_id") and st.session_state.get("session_saved"):
-        player = st.session_state.get("player_name", "Anonyme")
-        cid    = st.session_state.get("campaign_id")
-        st.success(
-            f"✅ Résultats de **{player}** transmis à ton formateur "
-            f"(campagne **{cid}**).",
-            icon="📤",
-        )
-    elif st.session_state.get("campaign_id") and not st.session_state.get("session_saved"):
-        st.warning("⚠️ La transmission des résultats a échoué. Vérifie ta connexion.")
-
     st.markdown("<br>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
@@ -284,8 +252,7 @@ def _render_endgame() -> None:
             st.rerun()
     with col2:
         if st.button("🔁 Rejouer", use_container_width=True):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
+            reset_game_progress()
             st.rerun()
 
 
@@ -319,7 +286,7 @@ def render_game_view() -> None:
         _render_endgame()
         return
 
-    scenario  = SCENARIOS[st.session_state.scene_index]
+    scenario  = resolve_scenario(SCENARIOS[st.session_state.scene_index])
     total     = len(SCENARIOS)
     completed = len(st.session_state.completed_scenes)
 
@@ -365,7 +332,6 @@ def render_game_view() -> None:
 
     # ── Choix (avant réponse) ──────────────────────────────────────
     if not st.session_state.answered:
-        _maybe_fire_distraction_toasts(st.session_state.scene_index)
         timer_seconds = scenario.get("timer")
         if timer_seconds:
             _render_timer(timer_seconds)
@@ -396,6 +362,10 @@ def render_game_view() -> None:
             story=st.session_state.consequence_story,
         )
         render_lesson(st.session_state.lesson)
+        learn_url   = scenario.get("learn_more_url", "")
+        learn_title = scenario.get("learn_more_title", "")
+        if learn_url:
+            _render_learn_more(learn_url, learn_title)
         _render_choices_recap(shuffled, st.session_state.chosen_label)
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -405,9 +375,6 @@ def render_game_view() -> None:
                 key = f"choices_order_{st.session_state.scene_index}"
                 if key in st.session_state:
                     del st.session_state[key]
-                toast_key = f"toasts_fired_{st.session_state.scene_index}"
-                if toast_key in st.session_state:
-                    del st.session_state[toast_key]
                 reset_scene()
                 st.rerun()
         with col2:

@@ -65,15 +65,50 @@ def init_game_state() -> None:
         st.session_state.max_unlocked_scene = 0  # index de la dernière scène débloquée
     if "completed_scenes" not in st.session_state:
         st.session_state.completed_scenes = {}  # {scene_id: {"score_delta": int, "outcome": str}}
-    # ── Campagne multijoueur ──────────────────────────────────────
-    if "game_started" not in st.session_state:
-        st.session_state.game_started = False   # False → affiche l'écran d'accueil
-    if "player_name" not in st.session_state:
-        st.session_state.player_name = "Anonyme"
-    if "campaign_id" not in st.session_state:
-        st.session_state.campaign_id = ""       # "" → mode solo anonyme
-    if "session_saved" not in st.session_state:
-        st.session_state.session_saved = False  # True → résultats déjà envoyés à Supabase
+    if "company_name" not in st.session_state:
+        st.session_state.company_name = None
+    if "display_name" not in st.session_state:
+        st.session_state.display_name = None
+    if "user_id" not in st.session_state:
+        st.session_state.user_id = None  # None → affiche l'écran d'authentification
+
+
+def _auto_save() -> None:
+    user_id = st.session_state.get("user_id")
+    if user_id is None:
+        return
+    from core.db import save_progress
+    save_progress(user_id, {
+        "score":              st.session_state.score,
+        "risk":               st.session_state.risk,
+        "scene_index":        st.session_state.scene_index,
+        "max_unlocked_scene": st.session_state.max_unlocked_scene,
+        "completed_scenes":   st.session_state.completed_scenes,
+    })
+
+
+def restore_progress(progress: dict) -> None:
+    st.session_state.score              = progress["score"]
+    st.session_state.risk               = progress["risk"]
+    st.session_state.scene_index        = progress["scene_index"]
+    st.session_state.max_unlocked_scene = progress["max_unlocked_scene"]
+    st.session_state.completed_scenes   = progress["completed_scenes"]
+    st.session_state.scene_start_score  = progress["score"]
+    st.session_state.scene_start_risk   = progress["risk"]
+    _clear_outcome()
+
+
+def reset_game_progress() -> None:
+    """Remet la partie à zéro sans déconnecter l'utilisateur."""
+    user_id      = st.session_state.get("user_id")
+    company_name = st.session_state.get("company_name")
+    display_name = st.session_state.get("display_name")
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    init_game_state()
+    st.session_state.user_id      = user_id
+    st.session_state.company_name = company_name
+    st.session_state.display_name = display_name
 
 
 def _clear_outcome() -> None:
@@ -137,6 +172,7 @@ def return_to_map() -> None:
         st.session_state.risk  = st.session_state.scene_start_risk
     st.session_state.current_scene = None
     _clear_outcome()
+    _auto_save()
 
 
 def advance_scene() -> None:
@@ -160,6 +196,7 @@ def advance_scene() -> None:
     if key in st.session_state:
         del st.session_state[key]
     _clear_outcome()
+    _auto_save()
 
 
 def set_outcome(
@@ -181,3 +218,4 @@ def set_outcome(
     st.session_state.score_delta_last   = score_delta
     st.session_state.risk_delta_last    = risk_delta
     st.session_state.answered           = True
+    _auto_save()

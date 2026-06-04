@@ -1,0 +1,90 @@
+/* ── Auth page — injected only on the login/register screen ──────── */
+
+/* Background */
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stHeader"] {
+    background: linear-gradient(145deg,#0B1D52 0%,#162B78 55%,#1E3FA0 100%) !important;
+}
+.main .block-container {
+    background: transparent !important;
+    padding-top: 4vh;
+    max-width: 1020px;
+}
+
+/* Right column white card */
+[data-testid="stColumn"]:last-of-type {
+    background: #FFFFFF !important;
+    border-radius: 20px !important;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.28) !important;
+    padding: 36px 32px 32px !important;
+}
+[data-testid="stColumn"]:last-of-type [data-testid="stColumn"] {
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+/* Text inputs */
+[data-testid="stTextInput"] [data-baseweb="input"] {
+    border-radius: 10px !important;
+    border: 1.5px solid #E2E8F0 !important;
+    background: #F8FAFC !important;
+    overflow: hidden !important;
+    transition: border-color .2s, box-shadow .2s !important;
+}
+[data-testid="stTextInput"] [data-baseweb="input"]:focus-within {
+    border-color: #2A52BE !important;
+    box-shadow: 0 0 0 3px rgba(42,82,190,.12) !important;
+    background: #fff !important;
+}
+[data-testid="stTextInput"] [data-baseweb="base-input"] { background: #FFFFFF !important; }
+[data-testid="stTextInput"] input {
+    border: none !important;
+    background: #FFFFFF !important;
+    border-radius: 0 !important;
+    padding: 11px 14px !important;
+    font-size: 14px !important;
+    font-family: 'Inter', sans-serif !important;
+    color: #1E293B !important;
+    box-shadow: none !important;
+}
+[data-testid="stTextInput"] input:focus   { box-shadow: none !important; outline: none !important; }
+[data-testid="stTextInput"] input::placeholder { color: #CBD5E1 !important; }
+
+/* Eye button (show/hide password) */
+[data-testid="stTextInput"] button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #94A3B8 !important;
+    padding: 0 10px !important;
+    min-height: unset !important;
+    width: 36px !important;
+    border-radius: 8px !important;
+    transition: color .15s !important;
+}
+[data-testid="stTextInput"] button:hover {
+    color: #2A52BE !important;
+    background: #EEF2FF !important;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+}
+[data-testid="stTextInput"] button svg { width: 16px !important; height: 16px !important; }
+
+/* Secondary buttons (toggle Nouvelle partie / Reprendre) */
+[data-testid="stBaseButton-secondary"] {
+    background: #F1F5F9 !important;
+    color: #64748B !important;
+    box-shadow: none !important;
+    border: 1.5px solid #E2E8F0 !important;
+}
+[data-testid="stBaseButton-secondary"]:hover {
+    background: #E2E8F0 !important;
+    color: #374151 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: none !important;
+}

@@ -1,12 +1,18 @@
 import time
+from pathlib import Path
 
 import streamlit as st
 
 from config import APP_TITLE, APP_ICON
+
+_TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+def _load_template(name: str, **kwargs) -> str:
+    return (_TEMPLATES_DIR / name).read_text(encoding="utf-8").format(**kwargs)
 from core.db import init_db, register_user, login_user, load_progress, validate_session_code, get_session_info
 from core.game_state import init_game_state, restore_progress
 from data.scenarios import SCENARIOS, resolve_scenario
-from ui.layout import apply_global_styles, render_header
+from ui.layout import apply_global_styles, apply_auth_styles, render_header
 from ui.game_view import render_game_view
 from ui.map_view import render_map
 from ui.trainer_view import render_trainer_dashboard
@@ -40,166 +46,13 @@ if st.session_state.user_id is None:
     if "auth_mode" not in st.session_state:
         st.session_state.auth_mode = "register"
 
-    st.markdown("""
-    <style>
-    /* Page background */
-    .stApp,
-    [data-testid="stAppViewContainer"],
-    [data-testid="stHeader"] {
-        background: linear-gradient(145deg,#0B1D52 0%,#162B78 55%,#1E3FA0 100%) !important;
-    }
-    .main .block-container {
-        background: transparent !important;
-        padding-top: 4vh;
-        max-width: 1020px;
-    }
-    /* Right column: white card — top-level only */
-    [data-testid="stColumn"]:last-of-type {
-        background: #FFFFFF !important;
-        border-radius: 20px !important;
-        box-shadow: 0 24px 64px rgba(0,0,0,0.28) !important;
-        padding: 36px 32px 32px !important;
-    }
-    /* Annule le style carte sur les colonnes imbriquées (ex: toggle buttons) */
-    [data-testid="stColumn"]:last-of-type [data-testid="stColumn"] {
-        background: transparent !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-    }
-    /* Input — border sur le conteneur baseweb, pas sur l'élément input */
-    [data-testid="stTextInput"] [data-baseweb="input"] {
-        border-radius: 10px !important;
-        border: 1.5px solid #E2E8F0 !important;
-        background: #F8FAFC !important;
-        overflow: hidden !important;
-        transition: border-color .2s, box-shadow .2s !important;
-    }
-    [data-testid="stTextInput"] [data-baseweb="input"]:focus-within {
-        border-color: #2A52BE !important;
-        box-shadow: 0 0 0 3px rgba(42,82,190,.12) !important;
-        background: #fff !important;
-    }
-    [data-testid="stTextInput"] [data-baseweb="base-input"] {
-        background: #FFFFFF !important;
-    }
-    [data-testid="stTextInput"] input {
-        border: none !important;
-        background: #FFFFFF !important;
-        border-radius: 0 !important;
-        padding: 11px 14px !important;
-        font-size: 14px !important;
-        font-family: 'Inter',sans-serif !important;
-        color: #1E293B !important;
-        box-shadow: none !important;
-    }
-    [data-testid="stTextInput"] input:focus { box-shadow: none !important; outline: none !important; }
-    [data-testid="stTextInput"] input::placeholder { color: #CBD5E1 !important; }
-    /* Bouton œil (show/hide password) */
-    [data-testid="stTextInput"] button {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: #94A3B8 !important;
-        padding: 0 10px !important;
-        min-height: unset !important;
-        width: 36px !important;
-        border-radius: 8px !important;
-        transition: color .15s !important;
-    }
-    [data-testid="stTextInput"] button:hover {
-        color: #2A52BE !important;
-        background: #EEF2FF !important;
-        transform: none !important;
-        box-shadow: none !important;
-        filter: none !important;
-    }
-    [data-testid="stTextInput"] button svg {
-        width: 16px !important; height: 16px !important;
-    }
-    /* Inactive toggle button */
-    [data-testid="stBaseButton-secondary"] {
-        background: #F1F5F9 !important; color: #64748B !important;
-        box-shadow: none !important; border: 1.5px solid #E2E8F0 !important;
-    }
-    [data-testid="stBaseButton-secondary"]:hover {
-        background: #E2E8F0 !important; color: #374151 !important;
-        transform: none !important; box-shadow: none !important; filter: none !important;
-    }
-    /* Left panel */
-    .ap-left { padding: 32px 36px 32px 8px; display:flex; flex-direction:column;
-                justify-content:center; min-height:580px; }
-    .ap-logo  { font-size:52px; line-height:1; margin-bottom:18px; }
-    .ap-title { font-family:'Inter',sans-serif; font-size:28px; font-weight:800;
-                color:#fff; letter-spacing:-.5px; line-height:1.2; margin-bottom:12px; }
-    .ap-sub   { font-family:'Inter',sans-serif; font-size:14px;
-                color:rgba(255,255,255,.6); line-height:1.65; margin-bottom:28px; }
-    .ap-feat  { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
-    .ap-fi    { background:rgba(255,255,255,.13); border-radius:8px; width:34px; height:34px;
-                display:flex; align-items:center; justify-content:center;
-                font-size:17px; flex-shrink:0; }
-    .ap-ft    { font-family:'Inter',sans-serif; font-size:13px;
-                color:rgba(255,255,255,.85); line-height:1.5; }
-    .ap-ft strong { color:#fff; font-weight:600; }
-    .ap-ft small  { color:rgba(255,255,255,.5); }
-    .ap-hr    { border:none; border-top:1px solid rgba(255,255,255,.12); margin:24px 0; }
-    .ap-stats { display:flex; gap:0; }
-    .ap-stat  { flex:1; }
-    .ap-stat + .ap-stat {
-        border-left: 1px solid rgba(255,255,255,.15);
-        padding-left: 28px;
-    }
-    .ap-sv    { font-family:'Inter',sans-serif; font-size:26px;
-                font-weight:800; color:#fff; }
-    .ap-sl    { font-family:'Inter',sans-serif; font-size:11px;
-                color:rgba(255,255,255,.45); margin-top:2px; letter-spacing:.5px; }
-    /* Right panel labels */
-    .ap-form-title { font-family:'Inter',sans-serif; font-size:22px; font-weight:800;
-                     color:#1E293B; letter-spacing:-.3px; margin-bottom:3px; }
-    .ap-form-sub   { font-family:'Inter',sans-serif; font-size:13px;
-                     color:#94A3B8; margin-bottom:18px; }
-    .ap-label { font-family:'Inter',sans-serif; font-size:11px; font-weight:700;
-                color:#64748B; letter-spacing:.6px; text-transform:uppercase;
-                margin-bottom:4px; margin-top:12px; }
-    .ap-hint  { font-family:'Inter',sans-serif; font-size:11px;
-                color:#94A3B8; margin-top:12px; text-align:center; }
-    </style>
-    """, unsafe_allow_html=True)
+    apply_auth_styles()
 
     left, right = st.columns([1.05, 1], gap="medium")
 
     # ── Panel gauche : branding ────────────────────────────────────
     with left:
-        st.markdown(f"""
-        <div class="ap-left">
-          <div class="ap-logo">🛡️</div>
-          <div class="ap-title">{APP_TITLE}</div>
-          <div class="ap-sub">
-            Apprends à détecter les vraies menaces cyber en jouant
-            le rôle d'un(e) nouvel(le) employé(e) dans une entreprise.
-          </div>
-          <div class="ap-feat">
-            <div class="ap-fi">📧</div>
-            <div class="ap-ft"><strong>Phishing &amp; vishing</strong><br>
-            <small>Emails frauduleux, appels malveillants</small></div>
-          </div>
-          <div class="ap-feat">
-            <div class="ap-fi">🔐</div>
-            <div class="ap-ft"><strong>Mots de passe &amp; accès</strong><br>
-            <small>Bonnes pratiques, gestion des identifiants</small></div>
-          </div>
-          <div class="ap-feat">
-            <div class="ap-fi">💾</div>
-            <div class="ap-ft"><strong>Clés USB &amp; shadow IT</strong><br>
-            <small>Périphériques non autorisés, logiciels pirates</small></div>
-          </div>
-          <hr class="ap-hr">
-          <div class="ap-stats">
-            <div class="ap-stat"><div class="ap-sv">16</div><div class="ap-sl">MISSIONS</div></div>
-            <div class="ap-stat"><div class="ap-sv">~30 min</div><div class="ap-sl">DURÉE ESTIMÉE</div></div>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.html(_load_template("auth_left.html", app_title=APP_TITLE))
 
     # ── Panel droit : formulaire ───────────────────────────────────
     with right:

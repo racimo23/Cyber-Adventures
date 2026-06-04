@@ -14,6 +14,7 @@ from ui.cards import (
     render_score_card,
     render_consequence,
     render_lesson,
+    _load,
 )
 
 
@@ -55,19 +56,7 @@ def _get_shuffled_choices(choices: list) -> list:
 
 
 def _render_learn_more(url: str, title: str) -> None:
-    st.markdown(
-        f'<a href="{url}" target="_blank" rel="noopener noreferrer" class="learn-more-link">'
-        f'<div class="learn-more-card">'
-        f'<div class="learn-more-icon">📚</div>'
-        f'<div class="learn-more-body">'
-        f'<div class="learn-more-label">Pour aller plus loin</div>'
-        f'<div class="learn-more-title">{title}</div>'
-        f'</div>'
-        f'<div class="learn-more-arrow">↗</div>'
-        f'</div>'
-        f'</a>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(_load("learn_more.html", url=url, title=title), unsafe_allow_html=True)
 
 
 def _render_indices(indices: list) -> None:
@@ -138,15 +127,10 @@ def _render_choices_recap(choices: list, chosen_label: str) -> None:
 def _render_score_delta() -> None:
     delta = st.session_state.score_delta_last
     if delta > 0:
-        st.markdown(
-            f'<div class="score-delta-positive">+{delta} pts</div>',
-            unsafe_allow_html=True,
-        )
+        css, text = "score-delta-positive", f"+{delta} pts"
     else:
-        st.markdown(
-            '<div class="score-delta-zero">+0 pt</div>',
-            unsafe_allow_html=True,
-        )
+        css, text = "score-delta-zero", "+0 pt"
+    st.html(_load("score_delta.html", css_class=css, text=text))
 
 
 def _render_timer(seconds: int) -> None:
@@ -217,12 +201,9 @@ def _render_breadcrumb(scenario: dict) -> None:
         total     = len(SCENARIOS)
         completed = len(st.session_state.completed_scenes)
         st.markdown(
-            f'<div style="display:flex;align-items:center;height:38px;'
-            f'font-family:Inter,sans-serif;font-size:13px;color:#64748B;">'
-            f'<span>Scène {scene_num}/{total} · '
-            f'<strong style="color:#2A52BE">{scenario["title"]}</strong> · '
-            f'{completed} mission(s) terminée(s)</span>'
-            f'</div>',
+            _load("breadcrumb_info.html",
+                  scene_num=scene_num, total=total,
+                  title=scenario["title"], completed=completed),
             unsafe_allow_html=True,
         )
 
@@ -512,16 +493,7 @@ def _render_interactive(scenario: dict) -> None:
         is_review = st.session_state.get("viewing_completed", False)
 
         if is_review:
-            st.html(
-                '<div style="background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:12px;'
-                'padding:10px 16px;margin-bottom:16px;font-family:Inter,sans-serif;'
-                'display:flex;align-items:center;gap:10px;">'
-                '<span style="font-size:18px;">👁️</span>'
-                '<div><div style="font-size:13px;font-weight:700;color:#1D4ED8;">Mode révision</div>'
-                '<div style="font-size:12px;color:#3B82F6;">Tu consultes ta réponse passée — '
-                'elle ne peut pas être modifiée.</div></div>'
-                '</div>'
-            )
+            st.html(_load("review_banner.html"))
 
         # En mode révision, afficher les choix dans l'ordre original (sans mélange)
         choices_to_display = scenario["choices"] if is_review else _get_shuffled_choices(scenario["choices"])

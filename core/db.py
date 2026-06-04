@@ -120,16 +120,19 @@ def init_db() -> None:
             name         TEXT NOT NULL,
             created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""")
-        # Migrations pour bases existantes (colonnes ajoutées après le premier déploiement)
-        for migration in [
-            "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'player'",
-            "ALTER TABLE users ADD COLUMN session_code TEXT",
-            "ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT 'f'",
-        ]:
-            try:
+
+    # Migrations — chaque ALTER dans sa propre connexion pour éviter qu'un échec
+    # (colonne déjà présente) ne mette toute la transaction PostgreSQL en erreur.
+    for migration in [
+        "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'player'",
+        "ALTER TABLE users ADD COLUMN session_code TEXT",
+        "ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT 'f'",
+    ]:
+        try:
+            with _db() as conn:
                 _run(conn, migration)
-            except Exception:
-                pass  # colonne déjà présente
+        except Exception:
+            pass  # colonne déjà présente
 
 
 # ── Auth ─────────────────────────────────────────────────────────────

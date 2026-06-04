@@ -79,35 +79,53 @@ def _render_indices(indices: list) -> None:
 
 
 def _render_choices_recap(choices: list, chosen_label: str) -> None:
-    _OUTCOME_CONFIG = {
-        "success": ("✅", "recap-success", "BONNE RÉPONSE"),
-        "danger":  ("🚨", "recap-danger",  "MAUVAIS CHOIX"),
-        "neutral": ("ℹ️", "recap-neutral",  "RISQUÉ"),
+    _OUTCOME_STYLE = {
+        "success": {"bg": "#F0FDF4", "border": "#86EFAC", "icon": "✅", "badge": "BONNE RÉPONSE",
+                    "label_color": "#14532D", "justif_color": "#166534"},
+        "danger":  {"bg": "#FFF5F5", "border": "#FCA5A5", "icon": "🚨", "badge": "MAUVAIS CHOIX",
+                    "label_color": "#7F1D1D", "justif_color": "#991B1B"},
+        "neutral": {"bg": "#FFFBEB", "border": "#FCD34D", "icon": "ℹ️",  "badge": "RISQUÉ",
+                    "label_color": "#78350F", "justif_color": "#92400E"},
     }
+
+    _FONT = "font-family:'Inter',sans-serif;"
+    _SIZE = "font-size:14px;line-height:1.55;"
+
     items_html = ""
     for choice in choices:
-        outcome = choice["outcome"]
+        s = _OUTCOME_STYLE.get(choice["outcome"], _OUTCOME_STYLE["neutral"])
         is_chosen = choice["label"] == chosen_label
-        icon, css_class, outcome_text = _OUTCOME_CONFIG.get(outcome, ("❓", "recap-neutral", "?"))
-        chosen_class = " recap-chosen" if is_chosen else ""
-        badge = f'<span class="recap-badge">{outcome_text}</span>' if is_chosen else ""
+        border_w  = "2px" if is_chosen else "1.5px"
+
+        badge_html = (
+            f'<span style="display:inline-block;{_FONT}font-size:10px;font-weight:700;'
+            f'text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:99px;'
+            f'background:rgba(0,0,0,0.08);color:{s["label_color"]};white-space:nowrap;">'
+            f'{s["badge"]}</span>'
+        ) if is_chosen else ""
+
         justification = choice.get("feedback", "")
         justif_html = (
-            f'<div class="recap-justif">'
-            f'<span class="recap-justif-icon">💬</span>'
-            f'<span class="recap-justif-text">{justification}</span>'
+            f'<div style="margin-top:6px;margin-left:28px;padding:5px 10px;'
+            f'background:rgba(0,0,0,0.04);border-radius:6px;">'
+            f'<span style="{_FONT}{_SIZE}font-weight:400;color:{s["justif_color"]};">'
+            f'{justification}</span>'
             f'</div>'
         ) if justification else ""
+
         items_html += (
-            f'<div class="recap-choice {css_class}{chosen_class}">'
-            f'<div class="recap-choice-header">'
-            f'<span class="recap-icon">{icon}</span>'
-            f'<span class="recap-label">{choice["label"]}</span>'
-            f'{badge}'
+            f'<div style="display:block;background:{s["bg"]};border:{border_w} solid {s["border"]};'
+            f'border-radius:10px;padding:11px 14px;margin-bottom:8px;">'
+            f'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+            f'<span style="font-size:16px;flex-shrink:0;">{s["icon"]}</span>'
+            f'<span style="{_FONT}{_SIZE}font-weight:600;color:{s["label_color"]};flex:1;">'
+            f'{choice["label"]}</span>'
+            f'{badge_html}'
             f'</div>'
             f'{justif_html}'
             f'</div>'
         )
+
     st.markdown(
         f'<div class="choices-recap">'
         f'<div class="recap-title">Récapitulatif des choix</div>'

@@ -304,10 +304,18 @@ if st.session_state.user_id is None:
                 st.error(err_msg)
 
             if mode == "register":
+                st.markdown('<div class="ap-label">Tu es</div>', unsafe_allow_html=True)
+                genre_choice = st.radio(
+                    "Tu es", options=["Homme", "Femme"],
+                    index=0, horizontal=True,
+                    label_visibility="collapsed", key="inp_gender",
+                )
+                gender = "m" if genre_choice == "Homme" else "f"
+
                 fn_col, ln_col = st.columns(2)
                 with fn_col:
                     st.markdown('<div class="ap-label">Prénom</div>', unsafe_allow_html=True)
-                    first_name = st.text_input("fn", placeholder="Marie",
+                    first_name = st.text_input("fn", placeholder="Jean",
                                                 label_visibility="collapsed", key="inp_fn")
                 with ln_col:
                     st.markdown('<div class="ap-label">Nom</div>', unsafe_allow_html=True)
@@ -316,9 +324,10 @@ if st.session_state.user_id is None:
                 display_name = f"{first_name.strip()} {last_name.strip()}".strip()
             else:
                 display_name = ""
+                gender = "f"
 
             st.markdown('<div class="ap-label">Pseudo</div>', unsafe_allow_html=True)
-            username = st.text_input("un", placeholder="ex : marie42",
+            username = st.text_input("un", placeholder="ex : jean42",
                                       label_visibility="collapsed", key=f"inp_user_{mode}")
 
             st.markdown('<div class="ap-label">Mot de passe</div>', unsafe_allow_html=True)
@@ -326,24 +335,6 @@ if st.session_state.user_id is None:
                                       label_visibility="collapsed", key=f"inp_pass_{mode}")
 
             if mode == "register":
-                st.markdown('<div class="ap-label">Tu es</div>', unsafe_allow_html=True)
-                g_col1, g_col2 = st.columns(2)
-                with g_col1:
-                    g_f = st.button("👩 Femme", use_container_width=True,
-                                    type="primary" if st.session_state.get("_gender", "f") == "f" else "secondary",
-                                    key="btn_gender_f")
-                with g_col2:
-                    g_m = st.button("👨 Homme", use_container_width=True,
-                                    type="primary" if st.session_state.get("_gender", "f") == "m" else "secondary",
-                                    key="btn_gender_m")
-                if g_f:
-                    st.session_state["_gender"] = "f"
-                    st.rerun()
-                if g_m:
-                    st.session_state["_gender"] = "m"
-                    st.rerun()
-                gender = st.session_state.get("_gender", "f")
-
                 st.markdown(
                     '<div class="ap-label">Entreprise '
                     '<span style="font-weight:400;color:#CBD5E1">(optionnel)</span></div>',

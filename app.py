@@ -3,7 +3,7 @@ import time
 import streamlit as st
 
 from config import APP_TITLE, APP_ICON
-from core.db import init_db, register_user, login_user, load_progress, validate_session_code
+from core.db import init_db, register_user, login_user, load_progress, validate_session_code, get_session_info
 from core.game_state import init_game_state, restore_progress
 from data.scenarios import SCENARIOS, resolve_scenario
 from ui.layout import apply_global_styles, render_header
@@ -27,6 +27,13 @@ def _setup_db():
 _setup_db()
 init_game_state()
 apply_global_styles()
+
+# ── Lecture du code de session depuis l'URL (?session=CYBER-XXXXX) ──
+if "url_session_checked" not in st.session_state:
+    url_code = st.query_params.get("session", "").strip().upper()
+    if url_code:
+        st.session_state["_pending_session_code"] = url_code
+    st.session_state["url_session_checked"] = True
 
 # ── Écran d'authentification ───────────────────────────────────────
 if st.session_state.user_id is None:
@@ -238,7 +245,7 @@ if st.session_state.user_id is None:
             tr_user = st.text_input("tr_un", placeholder="ex : jean.formateur",
                                      label_visibility="collapsed", key="tr_inp_user")
             st.markdown('<div class="ap-label">Mot de passe</div>', unsafe_allow_html=True)
-            tr_pass = st.text_input("tr_pw", placeholder="min. 4 caractères", type="password",
+            tr_pass = st.text_input("tr_pw", placeholder="min. 8 caractères", type="password",
                                      label_visibility="collapsed", key="tr_inp_pass")
 
             st.html("<div style='height:6px'></div>")
@@ -321,7 +328,7 @@ if st.session_state.user_id is None:
                                       label_visibility="collapsed", key=f"inp_user_{mode}")
 
             st.markdown('<div class="ap-label">Mot de passe</div>', unsafe_allow_html=True)
-            password = st.text_input("pw", placeholder="min. 4 caractères", type="password",
+            password = st.text_input("pw", placeholder="min. 8 caractères", type="password",
                                       label_visibility="collapsed", key=f"inp_pass_{mode}")
 
             if mode == "register":
@@ -332,14 +339,35 @@ if st.session_state.user_id is None:
                 company = st.text_input("co", placeholder="NovaCorp",
                                          label_visibility="collapsed", key="inp_company")
 
-                st.markdown(
-                    '<div class="ap-label">Code de session '
-                    '<span style="font-weight:400;color:#CBD5E1">(fourni par votre formateur)</span></div>',
-                    unsafe_allow_html=True)
-                session_code_input = st.text_input(
-                    "sc", placeholder="ex : CYBER-A3F7B2",
-                    label_visibility="collapsed", key="inp_session_code",
-                ).strip().upper()
+                # Détection automatique du code de session (via URL ou saisie manuelle)
+                pending_code = st.session_state.get("_pending_session_code", "")
+                if pending_code:
+                    info = get_session_info(pending_code)
+                    if info:
+                        st.html(f"""
+                        <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:10px;
+                             padding:10px 14px;margin-top:10px;font-family:'Inter',sans-serif;">
+                          <div style="font-size:12px;font-weight:700;color:#15803D;margin-bottom:2px;">
+                            🎓 Session détectée</div>
+                          <div style="font-size:13px;color:#166534;">
+                            <strong>{info['session_name']}</strong>
+                            — formateur : {info['trainer_name']}</div>
+                        </div>
+                        """)
+                        session_code_input = pending_code
+                    else:
+                        st.warning("Code de session invalide dans l'URL.")
+                        session_code_input = ""
+                        del st.session_state["_pending_session_code"]
+                else:
+                    st.markdown(
+                        '<div class="ap-label">Code de session '
+                        '<span style="font-weight:400;color:#CBD5E1">(optionnel — fourni par votre formateur)</span></div>',
+                        unsafe_allow_html=True)
+                    session_code_input = st.text_input(
+                        "sc", placeholder="ex : CYBER-A3F7B2",
+                        label_visibility="collapsed", key="inp_session_code",
+                    ).strip().upper()
             else:
                 company = ""
                 session_code_input = ""
@@ -348,7 +376,6 @@ if st.session_state.user_id is None:
 
             btn_label = "Commencer l'aventure →" if mode == "register" else "Se connecter →"
             if st.button(btn_label, use_container_width=True, key="btn_submit", type="primary"):
-                # Valider le code de session si fourni
                 sc = session_code_input or None
                 if sc and not validate_session_code(sc):
                     st.session_state.auth_error = "Code de session introuvable. Vérifiez le code avec votre formateur."

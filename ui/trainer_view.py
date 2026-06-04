@@ -112,10 +112,21 @@ def _render_create_session() -> None:
         st.success(f"✅ Session créée ! Code à communiquer aux joueurs : **{code}**")
 
 
+def _share_link(code: str) -> str:
+    """Construit le lien partageable avec le code de session dans l'URL."""
+    try:
+        import streamlit as st
+        base = st.context.url.split("?")[0].rstrip("/")
+    except Exception:
+        base = ""
+    return f"{base}?session={code}" if base else f"?session={code}"
+
+
 def _render_session_card(session: dict) -> None:
     nb     = session.get("nb_players", 0)
     code   = session["code"]
     date_s = _format_date(session.get("created_at"))
+    link   = _share_link(code)
 
     st.html(f"""
     <div class="tr-session-card">
@@ -128,10 +139,18 @@ def _render_session_card(session: dict) -> None:
       </div>
       <div class="tr-stat-row">
         <div class="tr-stat-pill">👥 {nb} joueur{'s' if nb != 1 else ''}</div>
-        <div class="tr-stat-pill">📋 Copiez le code et partagez-le</div>
+        <div class="tr-stat-pill">🔗 Lien ci-dessous</div>
       </div>
     </div>
     """)
+
+    # Lien à partager — st.code() ajoute automatiquement un bouton "Copier"
+    st.markdown(
+        '<p style="font-family:Inter,sans-serif;font-size:12px;font-weight:600;'
+        'color:#64748B;margin:6px 0 4px;">🔗 Lien à envoyer aux joueurs</p>',
+        unsafe_allow_html=True,
+    )
+    st.code(link, language=None)
 
     if nb == 0:
         st.caption("Aucun joueur n'a encore rejoint cette session.")

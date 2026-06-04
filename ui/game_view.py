@@ -525,22 +525,20 @@ def _render_interactive(scenario: dict) -> None:
         st.markdown("<br>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.button(
-                "🔁 Rejouer",
-                use_container_width=True,
-                on_click=_cb_rejouer,
-            )
+            # on_click seul = rerun fragment ; on veut un rerun complet → if + st.rerun()
+            if st.button("🔁 Rejouer", use_container_width=True):
+                _cb_rejouer()
+                st.rerun()
         with col2:
-            st.button(
-                "🗺️ Retour à la carte",
-                use_container_width=True,
-                key="back_map_bottom",
-                on_click=return_to_map,
-            )
+            if st.button("🗺️ Retour à la carte", use_container_width=True, key="back_map_bottom"):
+                return_to_map()
+                st.rerun()
         with col3:
             is_last = st.session_state.scene_index >= len(SCENARIOS) - 1
             label = "🏁 Bilan final →" if is_last else "✅ Valider →"
-            st.button(label, use_container_width=True, on_click=advance_scene)
+            if st.button(label, use_container_width=True):
+                advance_scene()
+                st.rerun()
 
 
 def _cb_rejouer() -> None:

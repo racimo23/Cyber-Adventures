@@ -153,8 +153,8 @@ def register_user(
         return False, "Le pseudo ne peut pas être vide."
     if not display_name.strip():
         return False, "Le nom ne peut pas être vide."
-    if len(password) < 4:
-        return False, "Le mot de passe doit faire au moins 4 caractères."
+    if len(password) < 8:
+        return False, "Le mot de passe doit faire au moins 8 caractères."
     try:
         with _db() as conn:
             _run(conn,
@@ -246,6 +246,17 @@ def create_session(trainer_id: int, name: str) -> str:
         except _ERR_UNIQUE:
             continue
     raise RuntimeError("Impossible de générer un code unique.")
+
+
+def get_session_info(code: str) -> dict | None:
+    """Retourne le nom de session + formateur pour affichage au joueur."""
+    with _db() as conn:
+        return _one(conn, f"""
+            SELECT s.name AS session_name, u.display_name AS trainer_name
+            FROM sessions s
+            JOIN users u ON s.trainer_id = u.id
+            WHERE s.code = {_PH}
+        """, (code.strip().upper(),))
 
 
 def get_trainer_sessions(trainer_id: int) -> list[dict]:

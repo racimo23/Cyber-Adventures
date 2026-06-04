@@ -58,6 +58,8 @@ def init_game_state() -> None:
         st.session_state.risk_delta_last = 0
     if "timer_expired" not in st.session_state:
         st.session_state.timer_expired = False
+    if "viewing_completed" not in st.session_state:
+        st.session_state.viewing_completed = False
     # ── Map / Hub ────────────────────────────────────────────────
     if "current_scene" not in st.session_state:
         st.session_state.current_scene = None  # None → affiche la carte
@@ -147,9 +149,52 @@ def select_scene(scene_index: int) -> None:
     _clear_outcome()
 
 
+def view_completed_scene(scene_index: int) -> None:
+    """Ouvrir une scène déjà complétée en lecture seule pour révision."""
+    from data.scenarios import SCENARIOS
+    scene_id       = SCENARIOS[scene_index]["id"]
+    completed_data = st.session_state.completed_scenes.get(scene_id, {})
+    outcome        = completed_data.get("outcome", "")
+    chosen_label   = completed_data.get("chosen_label", "")
+    score_delta    = completed_data.get("score_delta", 0)
+    risk_delta     = completed_data.get("risk_delta", 0)
+
+    # Retrouver le choix exact dans le scénario pour afficher son feedback/conséquence
+    matched_choice = {}
+    for choice in SCENARIOS[scene_index].get("choices", []):
+        if choice["label"] == chosen_label:
+            matched_choice = choice
+            break
+    if not matched_choice:
+        # Fallback : premier choix avec le bon outcome
+        for choice in SCENARIOS[scene_index].get("choices", []):
+            if choice["outcome"] == outcome:
+                matched_choice = choice
+                break
+
+    st.session_state.current_scene       = scene_index
+    st.session_state.scene_index         = scene_index
+    st.session_state.viewing_completed   = True
+    st.session_state.answered            = True
+    st.session_state.outcome             = outcome
+    st.session_state.chosen_label        = chosen_label
+    st.session_state.score_delta_last    = score_delta
+    st.session_state.risk_delta_last     = risk_delta
+    st.session_state.feedback            = matched_choice.get("feedback", "")
+    st.session_state.consequence_title   = matched_choice.get("consequence_title", "")
+    st.session_state.consequence_story   = matched_choice.get("consequence_story", "")
+    st.session_state.lesson              = matched_choice.get("lesson", "")
+    st.session_state.timer_expired       = False
+
+
 def return_to_map() -> None:
     """Quitter la scène en cours et revenir à la carte."""
     from data.scenarios import SCENARIOS
+    if st.session_state.get("viewing_completed"):
+        st.session_state.current_scene     = None
+        st.session_state.viewing_completed = False
+        _clear_outcome()
+        return
     if st.session_state.answered:
         # Player already answered — save outcome and keep score/risk
         scene_id = SCENARIOS[st.session_state.scene_index]["id"]
@@ -176,9 +221,10 @@ def advance_scene() -> None:
     from data.scenarios import SCENARIOS
     scene_id = SCENARIOS[st.session_state.scene_index]["id"]
     st.session_state.completed_scenes[scene_id] = {
-        "score_delta": st.session_state.score_delta_last,
-        "risk_delta":  st.session_state.risk_delta_last,
-        "outcome":     st.session_state.outcome,
+        "score_delta":  st.session_state.score_delta_last,
+        "risk_delta":   st.session_state.risk_delta_last,
+        "outcome":      st.session_state.outcome,
+        "chosen_label": st.session_state.chosen_label,
     }
     next_idx = st.session_state.scene_index + 1
     if next_idx > st.session_state.max_unlocked_scene:

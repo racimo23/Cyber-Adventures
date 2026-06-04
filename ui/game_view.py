@@ -447,7 +447,7 @@ def render_game_view() -> None:
     with right_col:
         # Artefact en 1 appel HTML caché
         st.html(_cached_artifact_html(idx, company, player))
-        if not st.session_state.answered:
+        if not st.session_state.answered and not st.session_state.get("viewing_completed"):
             _render_indices(scenario.get("indices", []))
 
     _render_interactive(scenario)
@@ -490,7 +490,23 @@ def _render_interactive(scenario: dict) -> None:
 
     # ── Résultat (après réponse) ───────────────────────────────────
     else:
-        shuffled = _get_shuffled_choices(scenario["choices"])
+        is_review = st.session_state.get("viewing_completed", False)
+
+        if is_review:
+            st.html(
+                '<div style="background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:12px;'
+                'padding:10px 16px;margin-bottom:16px;font-family:Inter,sans-serif;'
+                'display:flex;align-items:center;gap:10px;">'
+                '<span style="font-size:18px;">👁️</span>'
+                '<div><div style="font-size:13px;font-weight:700;color:#1D4ED8;">Mode révision</div>'
+                '<div style="font-size:12px;color:#3B82F6;">Tu consultes ta réponse passée — '
+                'elle ne peut pas être modifiée.</div></div>'
+                '</div>'
+            )
+
+        # En mode révision, afficher les choix dans l'ordre original (sans mélange)
+        choices_to_display = scenario["choices"] if is_review else _get_shuffled_choices(scenario["choices"])
+
         _render_score_delta()
         render_consequence(
             outcome=st.session_state.outcome,
@@ -503,17 +519,22 @@ def _render_interactive(scenario: dict) -> None:
         learn_title = scenario.get("learn_more_title", "")
         if learn_url:
             _render_learn_more(learn_url, learn_title)
-        _render_choices_recap(shuffled, st.session_state.chosen_label)
+        _render_choices_recap(choices_to_display, st.session_state.chosen_label)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("🗺️ Retour à la carte", use_container_width=True, key="back_map_bottom"):
+        if is_review:
+            if st.button("🗺️ Retour à la carte", use_container_width=True, key="back_map_review"):
                 return_to_map()
                 st.rerun()
-        with col2:
-            is_last = st.session_state.scene_index >= len(SCENARIOS) - 1
-            label = "🏁 Bilan final →" if is_last else "✅ Valider →"
-            if st.button(label, use_container_width=True):
-                advance_scene()
-                st.rerun()
+        else:
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🗺️ Retour à la carte", use_container_width=True, key="back_map_bottom"):
+                    return_to_map()
+                    st.rerun()
+            with col2:
+                is_last = st.session_state.scene_index >= len(SCENARIOS) - 1
+                label = "🏁 Bilan final →" if is_last else "✅ Valider →"
+                if st.button(label, use_container_width=True):
+                    advance_scene()
+                    st.rerun()

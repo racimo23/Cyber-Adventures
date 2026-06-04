@@ -19,7 +19,8 @@ def _get_db_url() -> str | None:
     return os.getenv("DATABASE_URL")
 
 
-_DATABASE_URL = _get_db_url()
+# Évalué une seule fois au chargement du module (pas à chaque rerun)
+_DATABASE_URL: str | None = _get_db_url()
 _PG = _DATABASE_URL is not None
 
 if _PG:

@@ -17,7 +17,13 @@ st.set_page_config(
     layout="wide",
 )
 
-init_db()
+# Exécuté une seule fois au démarrage du serveur, pas à chaque rerun
+@st.cache_resource
+def _setup_db():
+    init_db()
+    return True
+
+_setup_db()
 init_game_state()
 apply_global_styles()
 
@@ -39,29 +45,47 @@ if st.session_state.user_id is None:
         padding-top: 4vh;
         max-width: 1020px;
     }
-    /* Right column: white card */
+    /* Right column: white card — top-level only */
     [data-testid="stColumn"]:last-of-type {
         background: #FFFFFF !important;
         border-radius: 20px !important;
         box-shadow: 0 24px 64px rgba(0,0,0,0.28) !important;
         padding: 36px 32px 32px !important;
     }
-    /* Input fields */
-    [data-testid="stTextInput"] input {
+    /* Annule le style carte sur les colonnes imbriquées (ex: toggle buttons) */
+    [data-testid="stColumn"]:last-of-type [data-testid="stColumn"] {
+        background: transparent !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    /* Input — border sur le conteneur baseweb, pas sur l'élément input */
+    [data-testid="stTextInput"] [data-baseweb="input"] {
         border-radius: 10px !important;
         border: 1.5px solid #E2E8F0 !important;
-        padding: 11px 14px !important;
-        font-size: 14px !important;
-        font-family: 'Inter',sans-serif !important;
         background: #F8FAFC !important;
-        color: #1E293B !important;
-        transition: border-color .2s,box-shadow .2s !important;
+        overflow: hidden !important;
+        transition: border-color .2s, box-shadow .2s !important;
     }
-    [data-testid="stTextInput"] input:focus {
+    [data-testid="stTextInput"] [data-baseweb="input"]:focus-within {
         border-color: #2A52BE !important;
         box-shadow: 0 0 0 3px rgba(42,82,190,.12) !important;
         background: #fff !important;
     }
+    [data-testid="stTextInput"] [data-baseweb="base-input"] {
+        background: #FFFFFF !important;
+    }
+    [data-testid="stTextInput"] input {
+        border: none !important;
+        background: #FFFFFF !important;
+        border-radius: 0 !important;
+        padding: 11px 14px !important;
+        font-size: 14px !important;
+        font-family: 'Inter',sans-serif !important;
+        color: #1E293B !important;
+        box-shadow: none !important;
+    }
+    [data-testid="stTextInput"] input:focus { box-shadow: none !important; outline: none !important; }
     [data-testid="stTextInput"] input::placeholder { color: #CBD5E1 !important; }
     /* Inactive toggle button */
     [data-testid="stBaseButton-secondary"] {
@@ -89,11 +113,16 @@ if st.session_state.user_id is None:
     .ap-ft strong { color:#fff; font-weight:600; }
     .ap-ft small  { color:rgba(255,255,255,.5); }
     .ap-hr    { border:none; border-top:1px solid rgba(255,255,255,.12); margin:24px 0; }
-    .ap-stats { display:flex; gap:28px; }
-    .ap-sv    { font-family:'Inter',sans-serif; font-size:24px;
+    .ap-stats { display:flex; gap:0; }
+    .ap-stat  { flex:1; }
+    .ap-stat + .ap-stat {
+        border-left: 1px solid rgba(255,255,255,.15);
+        padding-left: 28px;
+    }
+    .ap-sv    { font-family:'Inter',sans-serif; font-size:26px;
                 font-weight:800; color:#fff; }
     .ap-sl    { font-family:'Inter',sans-serif; font-size:11px;
-                color:rgba(255,255,255,.45); margin-top:2px; letter-spacing:.3px; }
+                color:rgba(255,255,255,.45); margin-top:2px; letter-spacing:.5px; }
     /* Right panel labels */
     .ap-form-title { font-family:'Inter',sans-serif; font-size:22px; font-weight:800;
                      color:#1E293B; letter-spacing:-.3px; margin-bottom:3px; }
@@ -117,7 +146,7 @@ if st.session_state.user_id is None:
           <div class="ap-title">{APP_TITLE}</div>
           <div class="ap-sub">
             Apprends à détecter les vraies menaces cyber en jouant
-            le rôle d'un(e) nouvel(le) employé(e) dans ton entreprise.
+            le rôle d'un(e) nouvel(le) employé(e) dans une entreprise.
           </div>
           <div class="ap-feat">
             <div class="ap-fi">📧</div>
@@ -134,16 +163,10 @@ if st.session_state.user_id is None:
             <div class="ap-ft"><strong>Clés USB &amp; shadow IT</strong><br>
             <small>Périphériques non autorisés, logiciels pirates</small></div>
           </div>
-          <div class="ap-feat">
-            <div class="ap-fi">🤖</div>
-            <div class="ap-ft"><strong>Deepfakes &amp; IA</strong><br>
-            <small>Nouvelles menaces liées à l'intelligence artificielle</small></div>
-          </div>
           <hr class="ap-hr">
           <div class="ap-stats">
-            <div><div class="ap-sv">16</div><div class="ap-sl">MISSIONS</div></div>
-            <div><div class="ap-sv">~45</div><div class="ap-sl">MINUTES</div></div>
-            <div><div class="ap-sv">3</div><div class="ap-sl">NIVEAUX</div></div>
+            <div class="ap-stat"><div class="ap-sv">16</div><div class="ap-sl">MISSIONS</div></div>
+            <div class="ap-stat"><div class="ap-sv">~45 min</div><div class="ap-sl">DURÉE ESTIMÉE</div></div>
           </div>
         </div>
         """, unsafe_allow_html=True)
@@ -177,9 +200,16 @@ if st.session_state.user_id is None:
             st.error(err_msg)
 
         if mode == "register":
-            st.markdown('<div class="ap-label">Prénom / Nom</div>', unsafe_allow_html=True)
-            display_name = st.text_input("dn", placeholder="ex : Marie Dupont",
-                                          label_visibility="collapsed", key="inp_name")
+            fn_col, ln_col = st.columns(2)
+            with fn_col:
+                st.markdown('<div class="ap-label">Prénom</div>', unsafe_allow_html=True)
+                first_name = st.text_input("fn", placeholder="Marie",
+                                            label_visibility="collapsed", key="inp_fn")
+            with ln_col:
+                st.markdown('<div class="ap-label">Nom</div>', unsafe_allow_html=True)
+                last_name = st.text_input("ln", placeholder="Dupont",
+                                           label_visibility="collapsed", key="inp_ln")
+            display_name = f"{first_name.strip()} {last_name.strip()}".strip()
         else:
             display_name = ""
 
@@ -238,7 +268,7 @@ if "_loading_msg" in st.session_state:
     msg = st.session_state._loading_msg
     del st.session_state._loading_msg
     with st.spinner(msg):
-        time.sleep(0.85)
+        time.sleep(0.3)
     st.rerun()
 
 # ── Jeu principal ─────────────────────────────────────────────────

@@ -11,10 +11,14 @@ _GOOGLE_FONTS = (
 )
 
 
+@st.cache_data
+def _load_css() -> str:
+    return (STATIC_DIR / "style.css").read_text(encoding="utf-8")
+
+
 def apply_global_styles() -> None:
     st.markdown(_GOOGLE_FONTS, unsafe_allow_html=True)
-    css = (STATIC_DIR / "style.css").read_text(encoding="utf-8")
-    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    st.markdown(f"<style>{_load_css()}</style>", unsafe_allow_html=True)
 
 
 def render_header(title: str, subtitle: str) -> None:

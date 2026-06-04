@@ -4,24 +4,14 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from core.scoring import apply_score_change, get_risk_label, get_player_profile, SCORE_MAX, RISK_MAX
-from core.game_state import set_outcome, reset_scene, advance_scene, return_to_map, reset_game_progress
+from core.game_state import set_outcome, advance_scene, return_to_map, reset_game_progress
 from data.scenarios import SCENARIOS, resolve_scenario, _resolve_cached
 from ui.cards import (
     hero_card_html,
     artifact_html,
     scene_card_html,
     dialogue_html,
-    render_hero_card,
     render_score_card,
-    render_scene_card,
-    render_dialogue,
-    render_email_card,
-    render_file_card,
-    render_phone_card,
-    render_popup_card,
-    render_chat_card,
-    render_wifi_card,
-    render_form_card,
     render_consequence,
     render_lesson,
 )
@@ -63,23 +53,6 @@ def _get_shuffled_choices(choices: list) -> list:
     return [choices[i] for i in st.session_state[key]]
 
 
-def _render_artifact(artifact: dict) -> None:
-    kind = artifact["type"]
-    if kind == "email":
-        render_email_card(artifact["sender"], artifact["recipient"], artifact["subject"], artifact["body"])
-    elif kind == "file":
-        render_file_card(artifact["icon"], artifact["label"], artifact["filename"], artifact["detail"])
-    elif kind == "phone":
-        render_phone_card(artifact["icon"], artifact["caller"], artifact["label"], artifact["detail"])
-    elif kind == "popup":
-        render_popup_card(artifact["title"], artifact["message"], artifact["timer"], artifact["button_text"])
-    elif kind == "chat":
-        render_chat_card(artifact["sender"], artifact["avatar"], artifact["messages"])
-    elif kind == "wifi":
-        render_wifi_card(artifact["icon"], artifact["ssid"], artifact["detail"], artifact["security"])
-    elif kind == "form":
-        render_form_card(artifact["title"], artifact["field_label"], artifact["field_value"], artifact["hint"])
-
 
 def _render_learn_more(url: str, title: str) -> None:
     st.markdown(
@@ -118,11 +91,21 @@ def _render_choices_recap(choices: list, chosen_label: str) -> None:
         icon, css_class, outcome_text = _OUTCOME_CONFIG.get(outcome, ("❓", "recap-neutral", "?"))
         chosen_class = " recap-chosen" if is_chosen else ""
         badge = f'<span class="recap-badge">{outcome_text}</span>' if is_chosen else ""
+        justification = choice.get("feedback", "")
+        justif_html = (
+            f'<div class="recap-justif">'
+            f'<span class="recap-justif-icon">💬</span>'
+            f'<span class="recap-justif-text">{justification}</span>'
+            f'</div>'
+        ) if justification else ""
         items_html += (
             f'<div class="recap-choice {css_class}{chosen_class}">'
+            f'<div class="recap-choice-header">'
             f'<span class="recap-icon">{icon}</span>'
             f'<span class="recap-label">{choice["label"]}</span>'
             f'{badge}'
+            f'</div>'
+            f'{justif_html}'
             f'</div>'
         )
     st.markdown(
@@ -523,26 +506,14 @@ def _render_interactive(scenario: dict) -> None:
         _render_choices_recap(shuffled, st.session_state.chosen_label)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         with col1:
-            # on_click seul = rerun fragment ; on veut un rerun complet → if + st.rerun()
-            if st.button("🔁 Rejouer", use_container_width=True):
-                _cb_rejouer()
-                st.rerun()
-        with col2:
             if st.button("🗺️ Retour à la carte", use_container_width=True, key="back_map_bottom"):
                 return_to_map()
                 st.rerun()
-        with col3:
+        with col2:
             is_last = st.session_state.scene_index >= len(SCENARIOS) - 1
             label = "🏁 Bilan final →" if is_last else "✅ Valider →"
             if st.button(label, use_container_width=True):
                 advance_scene()
                 st.rerun()
-
-
-def _cb_rejouer() -> None:
-    key = f"choices_order_{st.session_state.scene_index}"
-    if key in st.session_state:
-        del st.session_state[key]
-    reset_scene()

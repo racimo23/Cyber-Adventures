@@ -39,7 +39,6 @@ def _chunks(lst: list, n: int):
 
 def _render_logout() -> None:
     company = st.session_state.get("company_name", "NovaCorp")
-    username = st.session_state.get("username_display", "")
     col_info, col_btn = st.columns([5, 1])
     with col_info:
         st.markdown(
@@ -145,21 +144,22 @@ def _render_node(scene_idx: int, scenario: dict) -> None:
     difficulty = scenario["difficulty"]
 
     if is_completed:
-        outcome  = completed_data["outcome"]
-        label = (
-            f"{emoji}\n\n"
-            f"Jour {day} · {difficulty}\n\n"
-            f"**{title}**"
+        outcome = completed_data["outcome"]
+        style   = _OUTCOME_STYLE[outcome]
+        node_html = (
+            f'<div class="map-node" style="background:{style["bg"]};border:2px solid {style["border"]};'
+            f'height:190px;cursor:default;display:flex;flex-direction:column;'
+            f'align-items:center;justify-content:center;gap:6px;border-radius:16px;padding:12px;text-align:center;">'
+            f'<div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:{style["border"]};">'
+            f'{style["icon"]} {style["label"].upper()}</div>'
+            f'<div style="font-size:30px;line-height:1;">{emoji}</div>'
+            f'<div style="font-size:11px;color:#64748B;">Jour {day}</div>'
+            f'<div style="font-size:13px;font-weight:700;color:#1E293B;line-height:1.3;">{title}</div>'
+            f'<div style="font-size:11px;background:{diff_bg};color:{diff_color};'
+            f'border-radius:6px;padding:2px 8px;">{difficulty}</div>'
+            f'</div>'
         )
-        st.markdown(f'<div class="nbm nbm-{outcome}"></div>', unsafe_allow_html=True)
-        if st.button(label, key=f"map_btn_{scene_idx}", use_container_width=True):
-            select_scene(scene_idx)
-            company = st.session_state.get("company_name") or "NovaCorp"
-            player  = st.session_state.get("display_name") or "Alice"
-            st.session_state._loading_msg = (
-                random.choice(_LOADING_MSGS).replace("NovaCorp", company).replace("Alice", player)
-            )
-            st.rerun()
+        st.markdown(node_html, unsafe_allow_html=True)
 
     elif is_unlocked:
         state    = "active" if is_next else "available"

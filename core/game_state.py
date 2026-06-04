@@ -128,15 +128,6 @@ def _clear_outcome() -> None:
     st.session_state.timer_expired = False
 
 
-def reset_scene() -> None:
-    """Rejouer la scène depuis le début (revert score/risque au début de la scène)."""
-    st.session_state.score = st.session_state.scene_start_score
-    st.session_state.risk = st.session_state.scene_start_risk
-    key = f"choices_order_{st.session_state.scene_index}"
-    if key in st.session_state:
-        del st.session_state[key]
-    _clear_outcome()
-
 
 def select_scene(scene_index: int) -> None:
     """Naviguer depuis la carte vers une scène spécifique."""

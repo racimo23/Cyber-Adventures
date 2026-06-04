@@ -166,7 +166,7 @@ if st.session_state.user_id is None:
           <hr class="ap-hr">
           <div class="ap-stats">
             <div class="ap-stat"><div class="ap-sv">16</div><div class="ap-sl">MISSIONS</div></div>
-            <div class="ap-stat"><div class="ap-sv">~45 min</div><div class="ap-sl">DURÉE ESTIMÉE</div></div>
+            <div class="ap-stat"><div class="ap-sv">~30 min</div><div class="ap-sl">DURÉE ESTIMÉE</div></div>
           </div>
         </div>
         """, unsafe_allow_html=True)

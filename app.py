@@ -3,12 +3,13 @@ import time
 import streamlit as st
 
 from config import APP_TITLE, APP_ICON
-from core.db import init_db, register_user, login_user, load_progress
+from core.db import init_db, register_user, login_user, load_progress, validate_session_code
 from core.game_state import init_game_state, restore_progress
 from data.scenarios import SCENARIOS, resolve_scenario
 from ui.layout import apply_global_styles, render_header
 from ui.game_view import render_game_view
 from ui.map_view import render_map
+from ui.trainer_view import render_trainer_dashboard
 
 
 st.set_page_config(
@@ -87,6 +88,28 @@ if st.session_state.user_id is None:
     }
     [data-testid="stTextInput"] input:focus { box-shadow: none !important; outline: none !important; }
     [data-testid="stTextInput"] input::placeholder { color: #CBD5E1 !important; }
+    /* Bouton œil (show/hide password) */
+    [data-testid="stTextInput"] button {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #94A3B8 !important;
+        padding: 0 10px !important;
+        min-height: unset !important;
+        width: 36px !important;
+        border-radius: 8px !important;
+        transition: color .15s !important;
+    }
+    [data-testid="stTextInput"] button:hover {
+        color: #2A52BE !important;
+        background: #EEF2FF !important;
+        transform: none !important;
+        box-shadow: none !important;
+        filter: none !important;
+    }
+    [data-testid="stTextInput"] button svg {
+        width: 16px !important; height: 16px !important;
+    }
     /* Inactive toggle button */
     [data-testid="stBaseButton-secondary"] {
         background: #F1F5F9 !important; color: #64748B !important;
@@ -174,93 +197,202 @@ if st.session_state.user_id is None:
     # ── Panel droit : formulaire ───────────────────────────────────
     with right:
         mode = st.session_state.auth_mode
-        form_title = "Créer un compte" if mode == "register" else "Bon retour !"
-        form_sub   = "Commence ton parcours cybersécurité." if mode == "register" \
-                     else "Reprends là où tu t'es arrêté."
 
-        st.markdown(f"""
-        <div class="ap-form-title">{form_title}</div>
-        <div class="ap-form-sub">{form_sub}</div>
-        """, unsafe_allow_html=True)
+        # ── Mode formateur ─────────────────────────────────────────
+        if mode == "trainer":
+            st.html('<div class="ap-form-title">Espace formateur</div>'
+                    '<div class="ap-form-sub">Accédez à vos sessions et résultats.</div>')
 
-        c1, c2 = st.columns(2)
-        with c1:
-            t1 = "primary" if mode == "register" else "secondary"
-            if st.button("Nouvelle partie", use_container_width=True, type=t1, key="btn_reg"):
+            t_sub_c1, t_sub_c2 = st.columns(2)
+            with t_sub_c1:
+                if st.button("Créer un compte", use_container_width=True,
+                             type="primary" if not st.session_state.get("_tr_login") else "secondary",
+                             key="tr_reg_btn"):
+                    st.session_state["_tr_login"] = False
+                    st.rerun()
+            with t_sub_c2:
+                if st.button("Me connecter", use_container_width=True,
+                             type="primary" if st.session_state.get("_tr_login") else "secondary",
+                             key="tr_log_btn"):
+                    st.session_state["_tr_login"] = True
+                    st.rerun()
+
+            tr_login = st.session_state.get("_tr_login", False)
+            err_msg = st.session_state.pop("auth_error", None)
+            if err_msg:
+                st.error(err_msg)
+
+            if not tr_login:
+                fn_c, ln_c = st.columns(2)
+                with fn_c:
+                    st.markdown('<div class="ap-label">Prénom</div>', unsafe_allow_html=True)
+                    tr_fn = st.text_input("tr_fn", placeholder="Jean", label_visibility="collapsed", key="tr_inp_fn")
+                with ln_c:
+                    st.markdown('<div class="ap-label">Nom</div>', unsafe_allow_html=True)
+                    tr_ln = st.text_input("tr_ln", placeholder="Dupont", label_visibility="collapsed", key="tr_inp_ln")
+                tr_display = f"{tr_fn.strip()} {tr_ln.strip()}".strip()
+            else:
+                tr_display = ""
+
+            st.markdown('<div class="ap-label">Pseudo</div>', unsafe_allow_html=True)
+            tr_user = st.text_input("tr_un", placeholder="ex : jean.formateur",
+                                     label_visibility="collapsed", key="tr_inp_user")
+            st.markdown('<div class="ap-label">Mot de passe</div>', unsafe_allow_html=True)
+            tr_pass = st.text_input("tr_pw", placeholder="min. 4 caractères", type="password",
+                                     label_visibility="collapsed", key="tr_inp_pass")
+
+            st.html("<div style='height:6px'></div>")
+            tr_btn = "Créer mon espace formateur →" if not tr_login else "Se connecter →"
+            if st.button(tr_btn, use_container_width=True, key="tr_submit", type="primary"):
+                if not tr_login:
+                    ok, err = register_user(tr_user, tr_pass, tr_display, "", role="trainer")
+                    if not ok:
+                        st.session_state.auth_error = err
+                        st.rerun()
+                    user, _ = login_user(tr_user, tr_pass)
+                else:
+                    user, err = login_user(tr_user, tr_pass)
+                    if user is None:
+                        st.session_state.auth_error = err
+                        st.rerun()
+                    if user.get("role") != "trainer":
+                        st.session_state.auth_error = "Ce compte n'est pas un compte formateur."
+                        st.rerun()
+
+                st.session_state.user_id      = user["id"]
+                st.session_state.display_name = user["display_name"]
+                st.session_state.company_name = user.get("company_name", "")
+                st.session_state.role         = "trainer"
+                st.rerun()
+
+            st.html("<div style='height:16px'></div>")
+            st.markdown(
+                '<div class="ap-hint" style="cursor:pointer" onclick="">'
+                '<a href="#" style="color:#94A3B8;text-decoration:none;" '
+                'onclick="window.location.reload()">← Retour espace joueur</a></div>',
+                unsafe_allow_html=True,
+            )
+            if st.button("← Retour", key="back_to_player", type="secondary",
+                         use_container_width=False):
                 st.session_state.auth_mode = "register"
                 st.rerun()
-        with c2:
-            t2 = "primary" if mode == "login" else "secondary"
-            if st.button("Reprendre", use_container_width=True, type=t2, key="btn_log"):
-                st.session_state.auth_mode = "login"
+
+        # ── Mode joueur (register / login) ─────────────────────────
+        else:
+            form_title = "Créer un compte" if mode == "register" else "Bon retour !"
+            form_sub   = "Commence ton parcours cybersécurité." if mode == "register" \
+                         else "Reprends là où tu t'es arrêté."
+
+            st.html(f'<div class="ap-form-title">{form_title}</div>'
+                    f'<div class="ap-form-sub">{form_sub}</div>')
+
+            c1, c2 = st.columns(2)
+            with c1:
+                t1 = "primary" if mode == "register" else "secondary"
+                if st.button("Nouvelle partie", use_container_width=True, type=t1, key="btn_reg"):
+                    st.session_state.auth_mode = "register"
+                    st.rerun()
+            with c2:
+                t2 = "primary" if mode == "login" else "secondary"
+                if st.button("Reprendre", use_container_width=True, type=t2, key="btn_log"):
+                    st.session_state.auth_mode = "login"
+                    st.rerun()
+
+            err_msg = st.session_state.pop("auth_error", None)
+            if err_msg:
+                st.error(err_msg)
+
+            if mode == "register":
+                fn_col, ln_col = st.columns(2)
+                with fn_col:
+                    st.markdown('<div class="ap-label">Prénom</div>', unsafe_allow_html=True)
+                    first_name = st.text_input("fn", placeholder="Marie",
+                                                label_visibility="collapsed", key="inp_fn")
+                with ln_col:
+                    st.markdown('<div class="ap-label">Nom</div>', unsafe_allow_html=True)
+                    last_name = st.text_input("ln", placeholder="Dupont",
+                                               label_visibility="collapsed", key="inp_ln")
+                display_name = f"{first_name.strip()} {last_name.strip()}".strip()
+            else:
+                display_name = ""
+
+            st.markdown('<div class="ap-label">Pseudo</div>', unsafe_allow_html=True)
+            username = st.text_input("un", placeholder="ex : marie42",
+                                      label_visibility="collapsed", key=f"inp_user_{mode}")
+
+            st.markdown('<div class="ap-label">Mot de passe</div>', unsafe_allow_html=True)
+            password = st.text_input("pw", placeholder="min. 4 caractères", type="password",
+                                      label_visibility="collapsed", key=f"inp_pass_{mode}")
+
+            if mode == "register":
+                st.markdown(
+                    '<div class="ap-label">Entreprise '
+                    '<span style="font-weight:400;color:#CBD5E1">(optionnel)</span></div>',
+                    unsafe_allow_html=True)
+                company = st.text_input("co", placeholder="NovaCorp",
+                                         label_visibility="collapsed", key="inp_company")
+
+                st.markdown(
+                    '<div class="ap-label">Code de session '
+                    '<span style="font-weight:400;color:#CBD5E1">(fourni par votre formateur)</span></div>',
+                    unsafe_allow_html=True)
+                session_code_input = st.text_input(
+                    "sc", placeholder="ex : CYBER-A3F7B2",
+                    label_visibility="collapsed", key="inp_session_code",
+                ).strip().upper()
+            else:
+                company = ""
+                session_code_input = ""
+
+            st.html("<div style='height:6px'></div>")
+
+            btn_label = "Commencer l'aventure →" if mode == "register" else "Se connecter →"
+            if st.button(btn_label, use_container_width=True, key="btn_submit", type="primary"):
+                # Valider le code de session si fourni
+                sc = session_code_input or None
+                if sc and not validate_session_code(sc):
+                    st.session_state.auth_error = "Code de session introuvable. Vérifiez le code avec votre formateur."
+                    st.rerun()
+
+                if mode == "register":
+                    ok, err = register_user(username, password, display_name, company,
+                                            session_code=sc)
+                    if not ok:
+                        st.session_state.auth_error = err
+                        st.rerun()
+                    user, _ = login_user(username, password)
+                else:
+                    user, err = login_user(username, password)
+                    if user is None:
+                        st.session_state.auth_error = err
+                        st.rerun()
+
+                st.session_state.user_id      = user["id"]
+                st.session_state.display_name = user["display_name"]
+                st.session_state.company_name = user["company_name"]
+                st.session_state.role         = user.get("role", "player")
+
+                saved = load_progress(user["id"])
+                if saved:
+                    restore_progress(saved)
+
                 st.rerun()
 
-        err_msg = st.session_state.pop("auth_error", None)
-        if err_msg:
-            st.error(err_msg)
-
-        if mode == "register":
-            fn_col, ln_col = st.columns(2)
-            with fn_col:
-                st.markdown('<div class="ap-label">Prénom</div>', unsafe_allow_html=True)
-                first_name = st.text_input("fn", placeholder="Marie",
-                                            label_visibility="collapsed", key="inp_fn")
-            with ln_col:
-                st.markdown('<div class="ap-label">Nom</div>', unsafe_allow_html=True)
-                last_name = st.text_input("ln", placeholder="Dupont",
-                                           label_visibility="collapsed", key="inp_ln")
-            display_name = f"{first_name.strip()} {last_name.strip()}".strip()
-        else:
-            display_name = ""
-
-        st.markdown('<div class="ap-label">Pseudo</div>', unsafe_allow_html=True)
-        username = st.text_input("un", placeholder="ex : marie42",
-                                  label_visibility="collapsed", key=f"inp_user_{mode}")
-
-        st.markdown('<div class="ap-label">Mot de passe</div>', unsafe_allow_html=True)
-        password = st.text_input("pw", placeholder="min. 4 caractères", type="password",
-                                  label_visibility="collapsed", key=f"inp_pass_{mode}")
-
-        if mode == "register":
-            st.markdown(
-                '<div class="ap-label">Entreprise '
-                '<span style="font-weight:400;color:#CBD5E1">(optionnel)</span></div>',
-                unsafe_allow_html=True)
-            company = st.text_input("co", placeholder="NovaCorp",
-                                     label_visibility="collapsed", key="inp_company")
-        else:
-            company = ""
-
-        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-
-        btn_label = "Créer mon compte  →" if mode == "register" else "Se connecter  →"
-        if st.button(btn_label, use_container_width=True, key="btn_submit", type="primary"):
             if mode == "register":
-                ok, err = register_user(username, password, display_name, company)
-                if not ok:
-                    st.session_state.auth_error = err
-                    st.rerun()
-                user, _ = login_user(username, password)
-            else:
-                user, err = login_user(username, password)
-                if user is None:
-                    st.session_state.auth_error = err
-                    st.rerun()
+                st.html('<div class="ap-hint">Entreprise vide → <strong>NovaCorp</strong> par défaut</div>')
 
-            st.session_state.user_id      = user["id"]
-            st.session_state.display_name = user["display_name"]
-            st.session_state.company_name = user["company_name"]
+            # Lien discret vers l'espace formateur
+            st.html("<div style='height:14px'></div>")
+            if st.button("🎓 Espace formateur", key="goto_trainer", type="secondary",
+                         use_container_width=True):
+                st.session_state.auth_mode = "trainer"
+                st.rerun()
 
-            saved = load_progress(user["id"])
-            if saved:
-                restore_progress(saved)
+    st.stop()
 
-            st.rerun()
-
-        if mode == "register":
-            st.markdown(
-                '<div class="ap-hint">Entreprise vide → <strong>NovaCorp</strong> par défaut</div>',
-                unsafe_allow_html=True)
+# ── Dashboard formateur ───────────────────────────────────────────
+if st.session_state.get("role") == "trainer":
+    render_trainer_dashboard()
     st.stop()
 
 # ── Transition de chargement (déclenchée par un clic sur la carte) ─

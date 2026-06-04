@@ -71,6 +71,8 @@ def init_game_state() -> None:
         st.session_state.display_name = None
     if "user_id" not in st.session_state:
         st.session_state.user_id = None  # None → affiche l'écran d'authentification
+    if "role" not in st.session_state:
+        st.session_state.role = "player"
 
 
 def _auto_save() -> None:
@@ -103,12 +105,14 @@ def reset_game_progress() -> None:
     user_id      = st.session_state.get("user_id")
     company_name = st.session_state.get("company_name")
     display_name = st.session_state.get("display_name")
+    role         = st.session_state.get("role", "player")
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     init_game_state()
     st.session_state.user_id      = user_id
     st.session_state.company_name = company_name
     st.session_state.display_name = display_name
+    st.session_state.role         = role
 
 
 def _clear_outcome() -> None:
@@ -159,9 +163,10 @@ def return_to_map() -> None:
         # Player already answered — save outcome and keep score/risk
         scene_id = SCENARIOS[st.session_state.scene_index]["id"]
         st.session_state.completed_scenes[scene_id] = {
-            "score_delta": st.session_state.score_delta_last,
-            "risk_delta":  st.session_state.risk_delta_last,
-            "outcome":     st.session_state.outcome,
+            "score_delta":  st.session_state.score_delta_last,
+            "risk_delta":   st.session_state.risk_delta_last,
+            "outcome":      st.session_state.outcome,
+            "chosen_label": st.session_state.chosen_label,
         }
         next_idx = st.session_state.scene_index + 1
         if next_idx > st.session_state.max_unlocked_scene:

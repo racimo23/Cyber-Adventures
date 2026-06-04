@@ -1,6 +1,8 @@
 import hashlib
 import json
 import os
+import random
+import string
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -74,6 +76,17 @@ def _run(conn, sql: str, params: tuple = ()) -> None:
     cur.execute(sql, params)
 
 
+def _all(conn, sql: str, params: tuple = ()) -> list[dict]:
+    """Exécute un SELECT et retourne toutes les lignes en liste de dicts."""
+    if _PG:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        cur = conn.cursor()
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    return [dict(r) for r in rows]
+
+
 # ── Initialisation des tables ────────────────────────────────────────
 
 def init_db() -> None:
@@ -85,6 +98,8 @@ def init_db() -> None:
             password_hash TEXT NOT NULL,
             display_name  TEXT NOT NULL DEFAULT 'Alice',
             company_name  TEXT NOT NULL DEFAULT 'NovaCorp',
+            role          TEXT NOT NULL DEFAULT 'player',
+            session_code  TEXT,
             created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""")
         _run(conn, f"""
@@ -97,6 +112,23 @@ def init_db() -> None:
             completed_scenes   TEXT DEFAULT '{{}}',
             updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""")
+        _run(conn, f"""
+        CREATE TABLE IF NOT EXISTS sessions (
+            {_ID_COL},
+            trainer_id   INTEGER NOT NULL REFERENCES users(id),
+            code         TEXT UNIQUE NOT NULL,
+            name         TEXT NOT NULL,
+            created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+        # Migrations pour bases existantes (colonnes ajoutées après le premier déploiement)
+        for migration in [
+            "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'player'",
+            "ALTER TABLE users ADD COLUMN session_code TEXT",
+        ]:
+            try:
+                _run(conn, migration)
+            except Exception:
+                pass  # colonne déjà présente
 
 
 # ── Auth ─────────────────────────────────────────────────────────────
@@ -114,7 +146,8 @@ def _verify_password(password: str, stored: str) -> bool:
 
 
 def register_user(
-    username: str, password: str, display_name: str, company_name: str
+    username: str, password: str, display_name: str, company_name: str,
+    role: str = "player", session_code: str | None = None,
 ) -> tuple[bool, str]:
     if not username.strip():
         return False, "Le pseudo ne peut pas être vide."
@@ -125,13 +158,15 @@ def register_user(
     try:
         with _db() as conn:
             _run(conn,
-                f"INSERT INTO users (username, password_hash, display_name, company_name)"
-                f" VALUES ({_PH}, {_PH}, {_PH}, {_PH})",
+                f"INSERT INTO users (username, password_hash, display_name, company_name, role, session_code)"
+                f" VALUES ({_PH}, {_PH}, {_PH}, {_PH}, {_PH}, {_PH})",
                 (
                     username.strip(),
                     _hash_password(password),
                     display_name.strip(),
                     company_name.strip() or "NovaCorp",
+                    role,
+                    session_code.strip().upper() if session_code else None,
                 ),
             )
         return True, ""
@@ -187,3 +222,67 @@ def load_progress(user_id: int) -> dict | None:
         "max_unlocked_scene": row["max_unlocked_scene"],
         "completed_scenes":   json.loads(row["completed_scenes"]),
     }
+
+
+# ── Sessions formateur ───────────────────────────────────────────────
+
+_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # sans O I 0 1
+
+
+def _gen_code() -> str:
+    return "CYBER-" + "".join(random.choices(_CODE_CHARS, k=6))
+
+
+def create_session(trainer_id: int, name: str) -> str:
+    """Crée une session et retourne son code unique."""
+    for _ in range(10):
+        code = _gen_code()
+        try:
+            with _db() as conn:
+                _run(conn,
+                     f"INSERT INTO sessions (trainer_id, code, name) VALUES ({_PH},{_PH},{_PH})",
+                     (trainer_id, code, name.strip()))
+            return code
+        except _ERR_UNIQUE:
+            continue
+    raise RuntimeError("Impossible de générer un code unique.")
+
+
+def get_trainer_sessions(trainer_id: int) -> list[dict]:
+    """Retourne toutes les sessions d'un formateur avec le nombre de joueurs."""
+    with _db() as conn:
+        rows = _all(conn, f"""
+            SELECT s.id, s.code, s.name, s.created_at,
+                   COUNT(u.id) AS nb_players
+            FROM sessions s
+            LEFT JOIN users u ON u.session_code = s.code
+            WHERE s.trainer_id = {_PH}
+            GROUP BY s.id, s.code, s.name, s.created_at
+            ORDER BY s.created_at DESC
+        """, (trainer_id,))
+    return rows
+
+
+def get_session_players(session_code: str) -> list[dict]:
+    """Retourne tous les joueurs d'une session avec leur progression."""
+    with _db() as conn:
+        rows = _all(conn, f"""
+            SELECT u.id, u.display_name, u.company_name, u.username, u.created_at,
+                   COALESCE(p.score, 0)              AS score,
+                   COALESCE(p.max_unlocked_scene, 0) AS max_unlocked_scene,
+                   COALESCE(p.completed_scenes, '{{}}') AS completed_scenes
+            FROM users u
+            LEFT JOIN progress p ON p.user_id = u.id
+            WHERE u.session_code = {_PH}
+            ORDER BY score DESC
+        """, (session_code.upper(),))
+    for r in rows:
+        r["completed_scenes"] = json.loads(r["completed_scenes"])
+    return rows
+
+
+def validate_session_code(code: str) -> bool:
+    """Vérifie qu'un code de session existe."""
+    with _db() as conn:
+        row = _one(conn, f"SELECT id FROM sessions WHERE code = {_PH}", (code.strip().upper(),))
+    return row is not None

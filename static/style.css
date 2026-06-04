@@ -719,19 +719,20 @@
     font-family: 'Inter', sans-serif;
 }
 .learn-more-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #2A52BE;
-    line-height: 1.45;
-    font-family: 'Inter', sans-serif;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-color: rgba(42,82,190,0.4);
-    white-space: normal;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #2A52BE !important;
+    line-height: 1.45 !important;
+    font-family: 'Inter', sans-serif !important;
+    text-decoration: underline !important;
+    text-underline-offset: 4px !important;
+    text-decoration-color: rgba(42,82,190,0.45) !important;
+    text-decoration-thickness: 1.5px !important;
+    white-space: normal !important;
 }
 .learn-more-card:hover .learn-more-title {
-    text-decoration-color: #2A52BE;
-    color: #1a3a8f;
+    text-decoration-color: #2A52BE !important;
+    color: #1a3a8f !important;
 }
 .learn-more-arrow {
     font-size: 22px;

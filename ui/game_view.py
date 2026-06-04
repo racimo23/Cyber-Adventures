@@ -5,8 +5,12 @@ import streamlit.components.v1 as components
 
 from core.scoring import apply_score_change, get_risk_label, get_player_profile, SCORE_MAX, RISK_MAX
 from core.game_state import set_outcome, reset_scene, advance_scene, return_to_map, reset_game_progress
-from data.scenarios import SCENARIOS, resolve_scenario
+from data.scenarios import SCENARIOS, resolve_scenario, _resolve_cached
 from ui.cards import (
+    hero_card_html,
+    artifact_html,
+    scene_card_html,
+    dialogue_html,
     render_hero_card,
     render_score_card,
     render_scene_card,
@@ -25,6 +29,29 @@ from ui.cards import (
 
 # ── Helpers ───────────────────────────────────────────────────────
 
+
+
+@st.cache_data(show_spinner=False)
+def _cached_left_col_html(scene_index: int, company: str, player: str) -> str:
+    """Scène card + dialogues en un seul bloc HTML — calculé une fois par scène/utilisateur."""
+    s = _resolve_cached(scene_index, company, player)
+    html = scene_card_html(s["scene_card"]["title"], s["scene_card"]["body"])
+    for d in s["dialogues"]:
+        html += dialogue_html(d["speaker"], d["text"], d.get("avatar", "💬"))
+    return html
+
+
+@st.cache_data(show_spinner=False)
+def _cached_artifact_html(scene_index: int, company: str, player: str) -> str:
+    """HTML de l'artefact (email/fichier/…) — calculé une fois par scène/utilisateur."""
+    s = _resolve_cached(scene_index, company, player)
+    return artifact_html(s["artifact"])
+
+
+@st.cache_data(show_spinner=False)
+def _cached_hero_html(scene_index: int, company: str, player: str) -> str:
+    s = _resolve_cached(scene_index, company, player)
+    return hero_card_html(s["hero"], s["day"], s["difficulty"])
 
 
 def _get_shuffled_choices(choices: list) -> list:
@@ -199,23 +226,134 @@ def _render_breadcrumb(scenario: dict) -> None:
         )
 
 
+# ── Certificate ───────────────────────────────────────────────────
+
+def _generate_certificate(display_name: str, company: str, score: int,
+                           nb_missions: int, nb_success: int,
+                           profile_title: str) -> bytes:
+    from fpdf import FPDF
+    from datetime import date
+
+    W, H = 297, 210  # A4 landscape mm
+    pdf = FPDF(orientation="L", unit="mm", format="A4")
+    pdf.set_auto_page_break(False)
+    pdf.add_page()
+
+    # Background
+    pdf.set_fill_color(248, 250, 252)
+    pdf.rect(0, 0, W, H, "F")
+
+    # Outer border (double)
+    pdf.set_draw_color(42, 82, 190)
+    pdf.set_line_width(2.5)
+    pdf.rect(8, 8, W - 16, H - 16)
+    pdf.set_line_width(0.6)
+    pdf.rect(11, 11, W - 22, H - 22)
+
+    # Header band
+    pdf.set_fill_color(42, 82, 190)
+    pdf.rect(8, 8, W - 16, 34, "F")
+
+    # App name
+    pdf.set_font("Helvetica", "B", 20)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_xy(0, 14)
+    pdf.cell(W, 10, "CyberOnboard Adventures", align="C")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_xy(0, 26)
+    pdf.cell(W, 7, "Parcours de sensibilisation a la cybersecurite", align="C")
+
+    # "CERTIFICAT"
+    pdf.set_font("Helvetica", "B", 30)
+    pdf.set_text_color(42, 82, 190)
+    pdf.set_xy(0, 50)
+    pdf.cell(W, 16, "CERTIFICAT", align="C")
+
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.set_text_color(100, 116, 139)
+    pdf.set_xy(0, 66)
+    pdf.cell(W, 8, "DE SENSIBILISATION A LA CYBERSECURITE", align="C")
+
+    # "Decerne a"
+    pdf.set_font("Helvetica", "", 11)
+    pdf.set_text_color(148, 163, 184)
+    pdf.set_xy(0, 80)
+    pdf.cell(W, 7, "Decerne a", align="C")
+
+    # Name
+    safe_name = display_name.encode("latin-1", errors="replace").decode("latin-1")
+    pdf.set_font("Helvetica", "B", 26)
+    pdf.set_text_color(30, 41, 59)
+    pdf.set_xy(0, 88)
+    pdf.cell(W, 15, safe_name, align="C")
+    nw = pdf.get_string_width(safe_name)
+    nx = (W - nw) / 2
+    pdf.set_draw_color(42, 82, 190)
+    pdf.set_line_width(0.8)
+    pdf.line(nx, 104, nx + nw, 104)
+
+    # Company
+    safe_co = company.encode("latin-1", errors="replace").decode("latin-1")
+    pdf.set_font("Helvetica", "", 12)
+    pdf.set_text_color(100, 116, 139)
+    pdf.set_xy(0, 108)
+    pdf.cell(W, 8, f"au sein de  {safe_co}", align="C")
+
+    # Stats boxes
+    boxes = [
+        (f"{score}/100", "Score"),
+        (f"{nb_missions}/16", "Missions"),
+        (f"{nb_success}", "Reussites"),
+    ]
+    bw, bh, by = 55, 22, 124
+    gap = 20
+    total_w = len(boxes) * bw + (len(boxes) - 1) * gap
+    bx_start = (W - total_w) / 2
+    for i, (val, lbl) in enumerate(boxes):
+        bx = bx_start + i * (bw + gap)
+        pdf.set_fill_color(239, 246, 255)
+        pdf.set_draw_color(196, 219, 254)
+        pdf.set_line_width(0.4)
+        pdf.rect(bx, by, bw, bh, "FD")
+        pdf.set_font("Helvetica", "B", 16)
+        pdf.set_text_color(42, 82, 190)
+        pdf.set_xy(bx, by + 2)
+        pdf.cell(bw, 10, val, align="C")
+        pdf.set_font("Helvetica", "", 7.5)
+        pdf.set_text_color(100, 116, 139)
+        pdf.set_xy(bx, by + 13)
+        pdf.cell(bw, 6, lbl.upper(), align="C")
+
+    # Profile
+    safe_profile = profile_title.encode("latin-1", errors="replace").decode("latin-1")
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(42, 82, 190)
+    pdf.set_xy(0, 154)
+    pdf.cell(W, 7, f"Profil : {safe_profile}", align="C")
+
+    # Date
+    pdf.set_font("Helvetica", "", 8.5)
+    pdf.set_text_color(148, 163, 184)
+    pdf.set_xy(0, 164)
+    pdf.cell(W, 6, f"Delivre le {date.today().strftime('%d/%m/%Y')}", align="C")
+
+    return bytes(pdf.output())
+
+
 # ── End game ──────────────────────────────────────────────────────
 
 def _render_endgame() -> None:
     score     = st.session_state.score
-    risk      = st.session_state.risk
-    profile   = get_player_profile(score, risk)
+    profile   = get_player_profile(score, st.session_state.risk)
     completed = len(st.session_state.completed_scenes)
 
     outcomes   = [v["outcome"] for v in st.session_state.completed_scenes.values()]
     nb_success = outcomes.count("success")
     nb_neutral = outcomes.count("neutral")
     nb_danger  = outcomes.count("danger")
+    score_pct  = round(score / SCORE_MAX * 100)
 
-    score_pct = round(score / SCORE_MAX * 100)
-    risk_pct  = round(risk / RISK_MAX * 100)
-
-    html = (
+    st.html(
         f'<div class="endgame-profile-card" style="background:{profile["bg"]};border-color:{profile["border"]};">'
         f'<div class="endgame-profile-badge">{profile["badge"]}</div>'
         f'<div class="endgame-profile-level" style="color:{profile["color"]};">Niveau {profile["level"]} / 8</div>'
@@ -229,13 +367,6 @@ def _render_endgame() -> None:
         f'<div class="endgame-bar-track">'
         f'<div class="endgame-bar-fill" style="--target-w:{score_pct}%;background:{profile["bar_color"]};"></div>'
         f'</div>'
-        f'<div class="endgame-bar-row" style="margin-top:14px;">'
-        f'<span class="endgame-bar-label">Risque humain</span>'
-        f'<span class="endgame-bar-val" style="color:#DC2626;">{risk}/{RISK_MAX} — {get_risk_label(risk)}</span>'
-        f'</div>'
-        f'<div class="endgame-bar-track">'
-        f'<div class="endgame-bar-fill" style="--target-w:{risk_pct}%;background:#EF4444;"></div>'
-        f'</div>'
         f'</div>'
         f'<div class="endgame-stats">'
         f'<div><div class="endgame-stat-label">Missions</div><div class="endgame-stat-value">{completed}/{len(SCENARIOS)}</div></div>'
@@ -245,10 +376,23 @@ def _render_endgame() -> None:
         f'</div>'
         f'</div>'
     )
-    st.markdown(html, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    # ── Certificat PDF ─────────────────────────────────────────────
+    display_name = st.session_state.get("display_name") or "Participant"
+    company      = st.session_state.get("company_name") or "NovaCorp"
+    pdf_bytes    = _generate_certificate(
+        display_name, company, score, completed, nb_success, profile["title"]
+    )
+    st.html("<div style='height:16px'></div>")
+    st.download_button(
+        label="📄 Télécharger mon certificat (PDF)",
+        data=pdf_bytes,
+        file_name=f"certificat_{display_name.replace(' ','_')}.pdf",
+        mime="application/pdf",
+        use_container_width=True,
+    )
 
+    st.html("<div style='height:8px'></div>")
     col1, col2 = st.columns(2)
     with col1:
         if st.button("🗺️ Revoir la carte", use_container_width=True):
@@ -290,47 +434,36 @@ def render_game_view() -> None:
         _render_endgame()
         return
 
-    scenario  = resolve_scenario(SCENARIOS[st.session_state.scene_index])
+    idx       = st.session_state.scene_index
+    company   = st.session_state.get("company_name") or "NovaCorp"
+    player    = st.session_state.get("display_name") or "Alice"
+    scenario  = _resolve_cached(idx, company, player)
     total     = len(SCENARIOS)
     completed = len(st.session_state.completed_scenes)
 
     # Breadcrumb navigation
     _render_breadcrumb(scenario)
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
-    # Progression
-    st.markdown(
-        f"<div style='color:#64748B;font-size:13px;margin-bottom:4px;"
-        f"font-family:Inter,sans-serif;'>"
-        f"{completed} / {total} scènes terminées</div>",
-        unsafe_allow_html=True,
+    # Progression — un seul st.html() pour le texte + barre native
+    st.html(
+        f"<div style='color:#64748B;font-size:13px;margin:10px 0 4px;"
+        f"font-family:Inter,sans-serif;'>{completed} / {total} scènes terminées</div>"
     )
     st.progress(completed / total)
-    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 
-    render_hero_card(hero=scenario["hero"], day=scenario["day"], difficulty=scenario["difficulty"])
+    # Hero banner (cached HTML → 1 appel)
+    st.html(_cached_hero_html(idx, company, player))
 
-    score_col, risk_col, status_col = st.columns(3)
-    with score_col:
-        render_score_card("Score sécurité", f"{st.session_state.score}/{SCORE_MAX}")
-    with risk_col:
-        render_score_card("Risque humain", f"{st.session_state.risk}/{RISK_MAX}")
-    with status_col:
-        render_score_card("Niveau de risque", get_risk_label(st.session_state.risk))
-
-    st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
+    # Score — 1 seul score card (risque supprimé)
+    render_score_card("Score sécurité", f"{st.session_state.score} / {SCORE_MAX}")
 
     left_col, right_col = st.columns([1.2, 1])
     with left_col:
-        render_scene_card(scenario["scene_card"]["title"], scenario["scene_card"]["body"])
-        for dialogue in scenario["dialogues"]:
-            render_dialogue(
-                speaker=dialogue["speaker"],
-                text=dialogue["text"],
-                avatar=dialogue.get("avatar", "💬"),
-            )
+        # Scène card + dialogues fusionnés en 1 appel HTML caché
+        st.html(_cached_left_col_html(idx, company, player))
     with right_col:
-        _render_artifact(scenario["artifact"])
+        # Artefact en 1 appel HTML caché
+        st.html(_cached_artifact_html(idx, company, player))
         if not st.session_state.answered:
             _render_indices(scenario.get("indices", []))
 

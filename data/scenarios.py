@@ -11,20 +11,34 @@ def _deep_replace(obj, old: str, new: str):
     return obj
 
 
-def resolve_scenario(scenario: dict) -> dict:
-    company = (st.session_state.get("company_name") or "NovaCorp").strip() or "NovaCorp"
-    player  = (st.session_state.get("display_name") or "Alice").strip() or "Alice"
-    # first word only for lowercase/email contexts (e.g. "Marie Dupont" → "marie")
-    player_lower = player.split()[0].lower()
-
+@st.cache_data(show_spinner=False)
+def _resolve_cached(scene_index: int, company: str, player: str) -> dict:
+    """Calcul une seule fois par (scène, entreprise, joueur) — résultat mis en cache."""
+    scenario = SCENARIOS[scene_index]
     result = scenario
     if company != "NovaCorp":
         result = _deep_replace(result, "NovaCorp", company)
         result = _deep_replace(result, "novacorp", company.lower())
     if player != "Alice":
+        player_lower = player.split()[0].lower()
         result = _deep_replace(result, "Alice", player)
         result = _deep_replace(result, "alice", player_lower)
     return result
+
+
+def resolve_scenario(scenario: dict) -> dict:
+    """Wrapper qui lit session_state et délègue au cache."""
+    company = (st.session_state.get("company_name") or "NovaCorp").strip() or "NovaCorp"
+    player  = (st.session_state.get("display_name") or "Alice").strip() or "Alice"
+
+    # Retrouve l'index pour la clé de cache
+    scene_index = next(
+        (i for i, s in enumerate(SCENARIOS) if s is scenario),
+        None,
+    )
+    if scene_index is None:
+        return scenario
+    return _resolve_cached(scene_index, company, player)
 
 
 SCENARIOS = [

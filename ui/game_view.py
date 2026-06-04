@@ -156,13 +156,17 @@ def _render_timer(seconds: int) -> None:
             }}
             if (remaining <= 0) {{
                 clearInterval(interval);
-                var btns = window.parent.document.querySelectorAll('button[kind="secondary"]');
-                for (var i = 0; i < btns.length; i++) {{
-                    if (btns[i].textContent.trim() !== '' && !btns[i].disabled) {{
-                        btns[i].click();
-                        break;
-                    }}
-                }}
+                /* Boutons de navigation à ignorer */
+                var NAV = ['carte', 'rejouer', 'retour', 'valider', 'bilan',
+                           'quitter', 'indices', 'connecter', 'loin', 'compte'];
+                var allBtns = Array.from(window.parent.document.querySelectorAll('button'));
+                var choiceBtn = allBtns.find(function(b) {{
+                    if (b.disabled) return false;
+                    var t = b.textContent.trim().toLowerCase();
+                    if (!t) return false;
+                    return !NAV.some(function(n) {{ return t.indexOf(n) >= 0; }});
+                }});
+                if (choiceBtn) choiceBtn.click();
             }}
         }}, 1000);
     }})();
@@ -330,6 +334,13 @@ def render_game_view() -> None:
         if not st.session_state.answered:
             _render_indices(scenario.get("indices", []))
 
+    _render_interactive(scenario)
+
+
+@st.fragment
+def _render_interactive(scenario: dict) -> None:
+    """Fragment indépendant : seule cette zone se recharge à chaque interaction."""
+
     # ── Choix (avant réponse) ──────────────────────────────────────
     if not st.session_state.answered:
         timer_seconds = scenario.get("timer")
@@ -345,11 +356,21 @@ def render_game_view() -> None:
             grid = [row1[0], row1[1], row2[0], row2[1]]
         else:
             grid = st.columns(n)
+
         for idx, choice in enumerate(shuffled):
             with grid[idx]:
-                if st.button(choice["label"], use_container_width=True, key=f"choice_{idx}"):
-                    handle_choice(choice)
-                    st.rerun()
+                st.button(
+                    choice["label"],
+                    use_container_width=True,
+                    key=f"choice_{idx}",
+                    on_click=handle_choice,
+                    args=(choice,),
+                )
+
+        # Dès qu'un choix est enregistré, déclenche un rerun complet
+        # pour mettre à jour les scores affichés hors du fragment.
+        if st.session_state.answered:
+            st.rerun()
 
     # ── Résultat (après réponse) ───────────────────────────────────
     else:
@@ -371,19 +392,26 @@ def render_game_view() -> None:
         st.markdown("<br>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         with col1:
-            if st.button("🔁 Rejouer", use_container_width=True):
-                key = f"choices_order_{st.session_state.scene_index}"
-                if key in st.session_state:
-                    del st.session_state[key]
-                reset_scene()
-                st.rerun()
+            st.button(
+                "🔁 Rejouer",
+                use_container_width=True,
+                on_click=_cb_rejouer,
+            )
         with col2:
-            if st.button("🗺️ Retour à la carte", use_container_width=True, key="back_map_bottom"):
-                return_to_map()
-                st.rerun()
+            st.button(
+                "🗺️ Retour à la carte",
+                use_container_width=True,
+                key="back_map_bottom",
+                on_click=return_to_map,
+            )
         with col3:
             is_last = st.session_state.scene_index >= len(SCENARIOS) - 1
             label = "🏁 Bilan final →" if is_last else "✅ Valider →"
-            if st.button(label, use_container_width=True):
-                advance_scene()
-                st.rerun()
+            st.button(label, use_container_width=True, on_click=advance_scene)
+
+
+def _cb_rejouer() -> None:
+    key = f"choices_order_{st.session_state.scene_index}"
+    if key in st.session_state:
+        del st.session_state[key]
+    reset_scene()

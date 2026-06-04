@@ -43,9 +43,10 @@ def _resolve_cached(scene_index: int, company: str, player: str, gender: str = "
         result = _deep_replace(result, "NovaCorp", company)
         result = _deep_replace(result, "novacorp", company.lower())
     if player != "Alice":
-        player_lower = player.split()[0].lower()
-        result = _deep_replace(result, "Alice", player)
-        result = _deep_replace(result, "alice", player_lower)
+        first_name  = player.split()[0]          # "Racim" depuis "Racim Ouarglir"
+        first_lower = first_name.lower()
+        result = _deep_replace(result, "Alice", first_name)
+        result = _deep_replace(result, "alice", first_lower)
     result = _apply_gender(result, gender)
     return result
 

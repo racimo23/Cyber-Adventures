@@ -234,109 +234,200 @@ def _generate_certificate(display_name: str, company: str, score: int,
                            profile_title: str) -> bytes:
     from fpdf import FPDF
     from datetime import date
+    from pathlib import Path
 
-    W, H = 297, 210  # A4 landscape mm
+    FONTS = Path(__file__).parent.parent / "fonts"
+    W, H = 297, 210  # A4 paysage mm
+
+    # ── Couleurs ──────────────────────────────────────────────────────
+    NAVY   = (11,  29,  82)   # #0B1D52
+    BLUE   = (42,  82,  190)  # #2A52BE
+    GOLD   = (245, 158, 11)   # #F59E0B
+    WHITE  = (255, 255, 255)
+    LIGHT  = (239, 246, 255)  # #EFF6FF
+    GRAY   = (100, 116, 139)
+    DARK   = (30,  41,  59)
+    FAINT  = (203, 213, 225)
+
     pdf = FPDF(orientation="L", unit="mm", format="A4")
     pdf.set_auto_page_break(False)
     pdf.add_page()
 
-    # Background
-    pdf.set_fill_color(248, 250, 252)
+    # Polices UTF-8
+    pdf.add_font("Sans",     "", str(FONTS / "DejaVuSans.ttf"))
+    pdf.add_font("Sans",     "B", str(FONTS / "DejaVuSans-Bold.ttf"))
+
+    # ── Fond blanc ────────────────────────────────────────────────────
+    pdf.set_fill_color(*WHITE)
     pdf.rect(0, 0, W, H, "F")
 
-    # Outer border (double)
-    pdf.set_draw_color(42, 82, 190)
-    pdf.set_line_width(2.5)
-    pdf.rect(8, 8, W - 16, H - 16)
-    pdf.set_line_width(0.6)
-    pdf.rect(11, 11, W - 22, H - 22)
+    # ── Panneau gauche navy ───────────────────────────────────────────
+    PW = 82   # largeur panneau gauche
+    pdf.set_fill_color(*NAVY)
+    pdf.rect(0, 0, PW, H, "F")
 
-    # Header band
-    pdf.set_fill_color(42, 82, 190)
-    pdf.rect(8, 8, W - 16, 34, "F")
+    # Bande dorée sur le bord gauche
+    pdf.set_fill_color(*GOLD)
+    pdf.rect(0, 0, 4, H, "F")
 
-    # App name
-    pdf.set_font("Helvetica", "B", 20)
-    pdf.set_text_color(255, 255, 255)
-    pdf.set_xy(0, 14)
-    pdf.cell(W, 10, "CyberOnboard Adventures", align="C")
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_xy(0, 26)
-    pdf.cell(W, 7, "Parcours de sensibilisation a la cybersecurite", align="C")
+    # Bouclier géométrique
+    cx, cy = PW / 2, 50
+    sw, sh = 26, 30
+    sx = cx - sw / 2
+    # Corps du bouclier (rectangle arrondi approché)
+    pdf.set_fill_color(*WHITE)
+    pdf.set_draw_color(*WHITE)
+    pdf.rect(sx, cy - sh / 2, sw, sh * 0.72, "F")
+    # Pointe basse du bouclier
+    pdf.polygon(
+        [(sx, cy - sh / 2 + sh * 0.72),
+         (sx + sw, cy - sh / 2 + sh * 0.72),
+         (cx, cy - sh / 2 + sh)],
+        style="F",
+    )
+    # Lettre centrale
+    pdf.set_font("Sans", "B", 14)
+    pdf.set_text_color(*NAVY)
+    pdf.set_xy(0, cy - 7)
+    pdf.cell(PW, 10, "CA", align="C")
 
-    # "CERTIFICAT"
-    pdf.set_font("Helvetica", "B", 30)
-    pdf.set_text_color(42, 82, 190)
-    pdf.set_xy(0, 50)
-    pdf.cell(W, 16, "CERTIFICAT", align="C")
+    # Nom de l'app
+    pdf.set_font("Sans", "B", 13)
+    pdf.set_text_color(*WHITE)
+    pdf.set_xy(0, 76)
+    pdf.cell(PW, 8, "CyberOnboard", align="C")
 
-    pdf.set_font("Helvetica", "B", 13)
-    pdf.set_text_color(100, 116, 139)
-    pdf.set_xy(0, 66)
-    pdf.cell(W, 8, "DE SENSIBILISATION A LA CYBERSECURITE", align="C")
+    pdf.set_font("Sans", "", 9)
+    pdf.set_text_color(147, 197, 253)   # bleu clair
+    pdf.set_xy(0, 85)
+    pdf.cell(PW, 6, "Adventures", align="C")
 
-    # "Decerne a"
-    pdf.set_font("Helvetica", "", 11)
-    pdf.set_text_color(148, 163, 184)
-    pdf.set_xy(0, 80)
-    pdf.cell(W, 7, "Decerne a", align="C")
-
-    # Name
-    safe_name = display_name.encode("latin-1", errors="replace").decode("latin-1")
-    pdf.set_font("Helvetica", "B", 26)
-    pdf.set_text_color(30, 41, 59)
-    pdf.set_xy(0, 88)
-    pdf.cell(W, 15, safe_name, align="C")
-    nw = pdf.get_string_width(safe_name)
-    nx = (W - nw) / 2
-    pdf.set_draw_color(42, 82, 190)
+    # Séparateur doré court
+    pdf.set_draw_color(*GOLD)
     pdf.set_line_width(0.8)
-    pdf.line(nx, 104, nx + nw, 104)
+    sep_x = (PW - 30) / 2
+    pdf.line(sep_x, 95, sep_x + 30, 95)
 
-    # Company
-    safe_co = company.encode("latin-1", errors="replace").decode("latin-1")
-    pdf.set_font("Helvetica", "", 12)
-    pdf.set_text_color(100, 116, 139)
-    pdf.set_xy(0, 108)
-    pdf.cell(W, 8, f"au sein de  {safe_co}", align="C")
+    # Tagline
+    pdf.set_font("Sans", "", 7.5)
+    pdf.set_text_color(148, 163, 184)
+    pdf.set_xy(0, 98)
+    pdf.cell(PW, 5, "Sensibilisation", align="C")
+    pdf.set_xy(0, 104)
+    pdf.cell(PW, 5, "à la cybersécurité", align="C")
 
-    # Stats boxes
-    boxes = [
+    # Stats verticales dans le panneau gauche
+    left_stats = [
         (f"{score}/100", "Score"),
         (f"{nb_missions}/16", "Missions"),
-        (f"{nb_success}", "Reussites"),
+        (str(nb_success), "Réussites"),
     ]
-    bw, bh, by = 55, 22, 124
-    gap = 20
-    total_w = len(boxes) * bw + (len(boxes) - 1) * gap
-    bx_start = (W - total_w) / 2
-    for i, (val, lbl) in enumerate(boxes):
-        bx = bx_start + i * (bw + gap)
-        pdf.set_fill_color(239, 246, 255)
-        pdf.set_draw_color(196, 219, 254)
-        pdf.set_line_width(0.4)
-        pdf.rect(bx, by, bw, bh, "FD")
-        pdf.set_font("Helvetica", "B", 16)
-        pdf.set_text_color(42, 82, 190)
-        pdf.set_xy(bx, by + 2)
-        pdf.cell(bw, 10, val, align="C")
-        pdf.set_font("Helvetica", "", 7.5)
-        pdf.set_text_color(100, 116, 139)
-        pdf.set_xy(bx, by + 13)
-        pdf.cell(bw, 6, lbl.upper(), align="C")
+    sy = 122
+    for val, lbl in left_stats:
+        pdf.set_font("Sans", "B", 16)
+        pdf.set_text_color(*GOLD)
+        pdf.set_xy(0, sy)
+        pdf.cell(PW, 9, val, align="C")
+        pdf.set_font("Sans", "", 7)
+        pdf.set_text_color(148, 163, 184)
+        pdf.set_xy(0, sy + 9)
+        pdf.cell(PW, 5, lbl.upper(), align="C")
+        sy += 20
 
-    # Profile
-    safe_profile = profile_title.encode("latin-1", errors="replace").decode("latin-1")
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.set_text_color(42, 82, 190)
-    pdf.set_xy(0, 154)
-    pdf.cell(W, 7, f"Profil : {safe_profile}", align="C")
+    # Date en bas du panneau
+    pdf.set_font("Sans", "", 7)
+    pdf.set_text_color(100, 116, 139)
+    pdf.set_xy(0, H - 14)
+    pdf.cell(PW, 5, date.today().strftime("%d/%m/%Y"), align="C")
 
-    # Date
-    pdf.set_font("Helvetica", "", 8.5)
-    pdf.set_text_color(148, 163, 184)
-    pdf.set_xy(0, 164)
-    pdf.cell(W, 6, f"Delivre le {date.today().strftime('%d/%m/%Y')}", align="C")
+    # ── Panneau droit (contenu principal) ─────────────────────────────
+    RX = PW + 10   # x de départ du contenu droit
+    RW = W - RX    # largeur disponible
+
+    # Filigrane décoratif (cercles en haut à droite)
+    for i in range(4):
+        r = 18 + i * 14
+        pdf.set_draw_color(*FAINT)
+        pdf.set_line_width(0.3)
+        pdf.circle(W - r / 2, -r / 2, r, "D")
+
+    # CERTIFICAT
+    pdf.set_font("Sans", "B", 32)
+    pdf.set_text_color(*BLUE)
+    pdf.set_xy(RX, 28)
+    pdf.cell(RW - 10, 18, "CERTIFICAT", align="L")
+
+    # Ligne dorée épaisse sous CERTIFICAT
+    pdf.set_draw_color(*GOLD)
+    pdf.set_line_width(1.2)
+    pdf.line(RX, 48, RX + 90, 48)
+
+    # Sous-titre
+    pdf.set_font("Sans", "", 9.5)
+    pdf.set_text_color(*GRAY)
+    pdf.set_xy(RX, 52)
+    pdf.cell(RW - 10, 7, "DE RÉUSSITE EN CYBERSÉCURITÉ", align="L")
+
+    # "Décerné à"
+    pdf.set_font("Sans", "", 10)
+    pdf.set_text_color(*GRAY)
+    pdf.set_xy(RX, 70)
+    pdf.cell(RW - 10, 7, "Décerné à", align="L")
+
+    # Nom complet
+    pdf.set_font("Sans", "B", 28)
+    pdf.set_text_color(*DARK)
+    pdf.set_xy(RX, 78)
+    pdf.cell(RW - 10, 16, display_name, align="L")
+
+    # Ligne dorée sous le nom
+    nw = pdf.get_string_width(display_name)
+    pdf.set_draw_color(*GOLD)
+    pdf.set_line_width(0.6)
+    pdf.line(RX, 96, RX + min(nw + 4, RW - 14), 96)
+
+    # Entreprise
+    pdf.set_font("Sans", "", 11)
+    pdf.set_text_color(*GRAY)
+    pdf.set_xy(RX, 100)
+    pdf.cell(RW - 10, 7, f"au sein de  {company}", align="L")
+
+    # Profil badge
+    pdf.set_font("Sans", "B", 10)
+    pdf.set_text_color(*BLUE)
+    badge_y = 113
+    pdf.set_fill_color(*LIGHT)
+    pdf.set_draw_color(*BLUE)
+    pdf.set_line_width(0.3)
+    badge_w = pdf.get_string_width(f"  {profile_title}  ") + 6
+    pdf.rect(RX, badge_y, badge_w, 8, "FD")
+    pdf.set_xy(RX, badge_y)
+    pdf.cell(badge_w, 8, f"  {profile_title}", align="L")
+
+    # Message de validation
+    pdf.set_font("Sans", "", 8.5)
+    pdf.set_text_color(*GRAY)
+    pdf.set_xy(RX, 130)
+    pdf.multi_cell(RW - 14, 5,
+        "Ce certificat atteste que la personne mentionnée ci-dessus a complété\n"
+        "avec succès le parcours de sensibilisation à la cybersécurité\n"
+        "CyberOnboard Adventures.",
+        align="L"
+    )
+
+    # Ligne de signature
+    sig_y = H - 28
+    pdf.set_draw_color(*FAINT)
+    pdf.set_line_width(0.4)
+    pdf.line(RX, sig_y, RX + 55, sig_y)
+    pdf.line(RX + 80, sig_y, RX + 135, sig_y)
+
+    pdf.set_font("Sans", "", 7.5)
+    pdf.set_text_color(*GRAY)
+    pdf.set_xy(RX, sig_y + 2)
+    pdf.cell(55, 5, "Responsable formation", align="C")
+    pdf.set_xy(RX + 80, sig_y + 2)
+    pdf.cell(55, 5, "Responsable cybersécurité", align="C")
 
     return bytes(pdf.output())
 

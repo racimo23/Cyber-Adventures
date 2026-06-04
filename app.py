@@ -273,12 +273,6 @@ if st.session_state.user_id is None:
                 st.rerun()
 
             st.html("<div style='height:16px'></div>")
-            st.markdown(
-                '<div class="ap-hint" style="cursor:pointer" onclick="">'
-                '<a href="#" style="color:#94A3B8;text-decoration:none;" '
-                'onclick="window.location.reload()">← Retour espace joueur</a></div>',
-                unsafe_allow_html=True,
-            )
             if st.button("← Retour", key="back_to_player", type="secondary",
                          use_container_width=False):
                 st.session_state.auth_mode = "register"

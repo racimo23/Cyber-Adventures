@@ -177,11 +177,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_2",
-        "day": 3,
+        "day": 2,
         "title": "La clé USB mystérieuse",
         "category": "physical_security",
         "difficulty": "Facile",
-        "subtitle": "Jour 3 — Une clé USB dans le parking",
+        "subtitle": "Jour 2 — Une clé USB dans le parking",
         "learn_more_url": "https://odyssix.fr/blog/cybersecurite/cles-usb-peripheriques-vecteurs-attaque-physiques-2/",
         "learn_more_title": "Odyssix — Clés USB : vecteurs d'attaques physiques, comment s'en protéger",
         "hero": {
@@ -295,11 +295,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_3",
-        "day": 5,
+        "day": 3,
         "title": "Le mot de passe faible",
         "category": "password",
         "difficulty": "Facile",
-        "subtitle": "Jour 5 — Création du mot de passe CRM",
+        "subtitle": "Jour 3 — Création du mot de passe CRM",
         "learn_more_url": "https://www.it-connect.fr/politique-de-mot-de-passe-comment-appliquer-les-bonnes-pratiques-de-lanssi/",
         "learn_more_title": "IT-Connect — Politique de mot de passe : les bonnes pratiques de l'ANSSI",
         "hero": {
@@ -419,11 +419,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_4",
-        "day": 7,
+        "day": 4,
         "title": "Le bureau en désordre",
         "category": "clean_desk",
         "difficulty": "Facile",
-        "subtitle": "Jour 7 — 18h, Alice s'apprête à quitter le bureau",
+        "subtitle": "Jour 4 — 18h, Alice s'apprête à quitter le bureau",
         "learn_more_url": "https://anny.co/fr/blog/clean-desk-policy-order-and-safety-in-the-modern-workplace",
         "learn_more_title": "Anny — Clean Desk Policy : ordre et sécurité dans le lieu de travail moderne",
         "hero": {
@@ -548,11 +548,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_5",
-        "day": 9,
+        "day": 5,
         "title": "Le regard indiscret",
         "category": "physical_security",
         "difficulty": "Facile",
-        "subtitle": "Jour 9 — Quelqu'un regarde ton écran dans le train",
+        "subtitle": "Jour 5 — Quelqu'un regarde ton écran dans le train",
         "learn_more_url": "https://www.manageengine.com/fr/blog/general/shoulder-surfing-risques-consequences-et-solutions-pour-se-proteger.html",
         "learn_more_title": "ManageEngine — Shoulder surfing : risques, conséquences et solutions",
         "hero": {
@@ -676,11 +676,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_6",
-        "day": 11,
+        "day": 6,
         "title": "Le convertisseur PDF en ligne",
         "category": "shadow_it",
         "difficulty": "Facile",
-        "subtitle": "Jour 11 — L'outil non approuvé qui semble pratique",
+        "subtitle": "Jour 6 — L'outil non approuvé qui semble pratique",
         "learn_more_url": "https://lemonlearning.com/fr/blog/les-risques-du-shadow-it-pour-la-cybers%C3%A9curit%C3%A9",
         "learn_more_title": "Lemon Learning — Les risques du Shadow IT pour la cybersécurité",
         "hero": {
@@ -813,12 +813,12 @@ SCENARIOS = [
     # ══════════════════════════════════════════════════════════════
     {
         "id": "scene_7",
-        "day": 14,
+        "day": 7,
         "title": "L'appel du faux support IT",
         "category": "vishing",
         "difficulty": "Moyen",
         "timer": 45,
-        "subtitle": "Jour 14 — Un appel inattendu du « support IT »",
+        "subtitle": "Jour 7 — Un appel inattendu du « support IT »",
         "learn_more_url": "https://www.adista.fr/blog/cybersecurite-vishing-entreprise-arnaque-telephonique/",
         "learn_more_title": "Adista — Vishing en entreprise : comprendre et déjouer l'arnaque téléphonique",
         "hero": {
@@ -937,11 +937,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_8",
-        "day": 17,
+        "day": 8,
         "title": "La fausse mise à jour",
         "category": "malware",
         "difficulty": "Moyen",
-        "subtitle": "Jour 17 — Un popup suspect bloque l'écran d'Alice",
+        "subtitle": "Jour 8 — Un popup suspect bloque l'écran d'Alice",
         "learn_more_url": "https://cybersecurite.orange.fr/la-cybersecurite/protection-des-donnees/faux-messages-de-mise-a-jour-quand-un-clic-suffit-pour-infecter-votre-ordinateur.html",
         "learn_more_title": "Orange Cybersécurité — Faux messages de mise à jour : un clic peut tout infecter",
         "hero": {
@@ -1066,11 +1066,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_9",
-        "day": 20,
+        "day": 9,
         "title": "Le WiFi du café",
         "category": "wifi_mitm",
         "difficulty": "Moyen",
-        "subtitle": "Jour 20 — En déplacement dans un café",
+        "subtitle": "Jour 9 — En déplacement dans un café",
         "learn_more_url": "https://www.assurances-casterot.fr/man-in-the-middle/",
         "learn_more_title": "Casterot — Man in the Middle : les dangers du WiFi public expliqués",
         "hero": {
@@ -1191,11 +1191,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_10",
-        "day": 23,
+        "day": 10,
         "title": "Le résumé via ChatGPT",
         "category": "ai_leak",
         "difficulty": "Moyen",
-        "subtitle": "Jour 23 — Un raccourci tentant avec l'IA",
+        "subtitle": "Jour 10 — Un raccourci tentant avec l'IA",
         "learn_more_url": "https://www.riskinsight-wavestone.com/2025/05/fuite-de-donnees-comment-les-chatbots-dia-peuvent-faire-fuiter-vos-informations/",
         "learn_more_title": "Wavestone — Comment les chatbots d'IA peuvent faire fuiter vos données",
         "hero": {
@@ -1322,11 +1322,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_11",
-        "day": 26,
+        "day": 11,
         "title": "Le recruteur LinkedIn suspect",
         "category": "osint",
         "difficulty": "Moyen",
-        "subtitle": "Jour 26 — Une demande de connexion trop belle pour être vraie",
+        "subtitle": "Jour 11 — Une demande de connexion trop belle pour être vraie",
         "learn_more_url": "https://www.journaldunet.com/cybersecurite/1547881-faux-recruteurs-investisseurs-belles-femmes-comment-linkedin-est-devenu-le-terrain-de-jeu-favori-des-cyberespions/",
         "learn_more_title": "Journal du Net — Comment LinkedIn est devenu le terrain de jeu des cyberespions",
         "hero": {
@@ -1452,11 +1452,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_12",
-        "day": 29,
+        "day": 12,
         "title": "L'inconnu à la porte",
         "category": "physical_security",
         "difficulty": "Moyen",
-        "subtitle": "Jour 29 — Un inconnu veut accéder à la zone sécurisée",
+        "subtitle": "Jour 12 — Un inconnu veut accéder à la zone sécurisée",
         "learn_more_url": "https://www.metacompliance.com/fr/blog/cyber-security-awareness/c-est-quoi-tailgating-au-travail",
         "learn_more_title": "MetaCompliance — C'est quoi le tailgating au travail et comment s'en protéger ?",
         "hero": {
@@ -1588,11 +1588,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_13",
-        "day": 32,
+        "day": 13,
         "title": "L'imprimante oubliée",
         "category": "clean_desk",
         "difficulty": "Moyen",
-        "subtitle": "Jour 32 — Un contrat confidentiel oublié dans la salle d'impression",
+        "subtitle": "Jour 13 — Un contrat confidentiel oublié dans la salle d'impression",
         "learn_more_url": "https://profficium.fr/blog/rgpd-impression/",
         "learn_more_title": "Profficium — RGPD et impression : ce que les entreprises doivent savoir",
         "hero": {
@@ -1725,12 +1725,12 @@ SCENARIOS = [
     # ══════════════════════════════════════════════════════════════
     {
         "id": "scene_14",
-        "day": 35,
+        "day": 14,
         "title": "Le message du faux PDG",
         "category": "ceo_fraud",
         "difficulty": "Difficile",
         "timer": 60,
-        "subtitle": "Jour 35 — Un WhatsApp du « PDG »",
+        "subtitle": "Jour 14 — Un WhatsApp du « PDG »",
         "learn_more_url": "https://www.economie.gouv.fr/dgccrf/les-fiches-pratiques/se-premunir-contre-lescroquerie-aux-faux-ordres-de-virement-ou-arnaque",
         "learn_more_title": "Économie.gouv.fr — Se prémunir contre l'escroquerie aux faux ordres de virement",
         "hero": {
@@ -1854,12 +1854,12 @@ SCENARIOS = [
     },
     {
         "id": "scene_15",
-        "day": 38,
+        "day": 15,
         "title": "La saturation MFA",
         "category": "mfa_bombing",
         "difficulty": "Difficile",
         "timer": 30,
-        "subtitle": "Jour 38 — Des notifications MFA arrivent sans que tu te connectes",
+        "subtitle": "Jour 15 — Des notifications MFA arrivent sans que tu te connectes",
         "learn_more_url": "https://www.proofpoint.com/fr/threat-reference/mfa-fatigue-attack",
         "learn_more_title": "Proofpoint — Attaque par fatigue MFA : comprendre et se protéger",
         "hero": {
@@ -1986,11 +1986,11 @@ SCENARIOS = [
     },
     {
         "id": "scene_16",
-        "day": 42,
+        "day": 16,
         "title": "La fausse alerte antivirus",
         "category": "malware",
         "difficulty": "Difficile",
-        "subtitle": "Jour 42 — Un email d'alerte de sécurité qui semble urgent",
+        "subtitle": "Jour 16 — Un email d'alerte de sécurité qui semble urgent",
         "learn_more_url": "https://www.jedha.co/formation-cybersecurite/tout-savoir-sur-le-scareware-l-arnaque-au-faux-virus",
         "learn_more_title": "Jedha — Tout savoir sur le scareware : l'arnaque au faux virus",
         "hero": {

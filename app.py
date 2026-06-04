@@ -326,6 +326,24 @@ if st.session_state.user_id is None:
                                       label_visibility="collapsed", key=f"inp_pass_{mode}")
 
             if mode == "register":
+                st.markdown('<div class="ap-label">Tu es</div>', unsafe_allow_html=True)
+                g_col1, g_col2 = st.columns(2)
+                with g_col1:
+                    g_f = st.button("👩 Femme", use_container_width=True,
+                                    type="primary" if st.session_state.get("_gender", "f") == "f" else "secondary",
+                                    key="btn_gender_f")
+                with g_col2:
+                    g_m = st.button("👨 Homme", use_container_width=True,
+                                    type="primary" if st.session_state.get("_gender", "f") == "m" else "secondary",
+                                    key="btn_gender_m")
+                if g_f:
+                    st.session_state["_gender"] = "f"
+                    st.rerun()
+                if g_m:
+                    st.session_state["_gender"] = "m"
+                    st.rerun()
+                gender = st.session_state.get("_gender", "f")
+
                 st.markdown(
                     '<div class="ap-label">Entreprise '
                     '<span style="font-weight:400;color:#CBD5E1">(optionnel)</span></div>',
@@ -365,6 +383,7 @@ if st.session_state.user_id is None:
             else:
                 company = ""
                 session_code_input = ""
+                gender = "f"
 
             st.html("<div style='height:6px'></div>")
 
@@ -377,7 +396,7 @@ if st.session_state.user_id is None:
 
                 if mode == "register":
                     ok, err = register_user(username, password, display_name, company,
-                                            session_code=sc)
+                                            session_code=sc, gender=gender)
                     if not ok:
                         st.session_state.auth_error = err
                         st.rerun()
@@ -392,6 +411,7 @@ if st.session_state.user_id is None:
                 st.session_state.display_name = user["display_name"]
                 st.session_state.company_name = user["company_name"]
                 st.session_state.role         = user.get("role", "player")
+                st.session_state.gender       = user.get("gender", "f")
 
                 saved = load_progress(user["id"])
                 if saved:

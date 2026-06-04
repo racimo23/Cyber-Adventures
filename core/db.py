@@ -124,6 +124,7 @@ def init_db() -> None:
         for migration in [
             "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'player'",
             "ALTER TABLE users ADD COLUMN session_code TEXT",
+            "ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT 'f'",
         ]:
             try:
                 _run(conn, migration)
@@ -147,7 +148,7 @@ def _verify_password(password: str, stored: str) -> bool:
 
 def register_user(
     username: str, password: str, display_name: str, company_name: str,
-    role: str = "player", session_code: str | None = None,
+    role: str = "player", session_code: str | None = None, gender: str = "f",
 ) -> tuple[bool, str]:
     if not username.strip():
         return False, "Le pseudo ne peut pas être vide."
@@ -158,8 +159,8 @@ def register_user(
     try:
         with _db() as conn:
             _run(conn,
-                f"INSERT INTO users (username, password_hash, display_name, company_name, role, session_code)"
-                f" VALUES ({_PH}, {_PH}, {_PH}, {_PH}, {_PH}, {_PH})",
+                f"INSERT INTO users (username, password_hash, display_name, company_name, role, session_code, gender)"
+                f" VALUES ({_PH}, {_PH}, {_PH}, {_PH}, {_PH}, {_PH}, {_PH})",
                 (
                     username.strip(),
                     _hash_password(password),
@@ -167,6 +168,7 @@ def register_user(
                     company_name.strip() or "NovaCorp",
                     role,
                     session_code.strip().upper() if session_code else None,
+                    gender,
                 ),
             )
         return True, ""

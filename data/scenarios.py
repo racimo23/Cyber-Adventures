@@ -11,9 +11,32 @@ def _deep_replace(obj, old: str, new: str):
     return obj
 
 
+def _apply_gender(result, gender: str):
+    """Remplace les pronoms/accords féminins par les formes masculines si gender == 'm'."""
+    if gender != "m":
+        return result
+    # Pronom sujet en début de phrase ou après ponctuation/tiret
+    for before in (". ", "— ", '" ', "\n"):
+        result = _deep_replace(result, f"{before}Elle ", f"{before}Il ")
+    # Majuscule en tout début de chaîne ou après guillemet ouvrant
+    result = _deep_replace(result, '"Elle ', '"Il ')
+    # Pronom disjoint après prépositions (pour elle → pour lui, etc.)
+    for prep in ("pour", "chez", "derrière", "avec", "sur", "sans", "par", "d'", "de"):
+        result = _deep_replace(result, f"{prep} elle", f"{prep} lui")
+    # "qu'elle " → "qu'il "
+    result = _deep_replace(result, "qu'elle ", "qu'il ")
+    # Pronom sujet minuscule au milieu après virgule ou point-virgule
+    result = _deep_replace(result, ", elle ", ", il ")
+    result = _deep_replace(result, "; elle ", "; il ")
+    # Accords adjectivaux liés au personnage
+    result = _deep_replace(result, "nouvelle employée", "nouvel employé")
+    result = _deep_replace(result, "une nouvelle", "un nouveau")
+    return result
+
+
 @st.cache_data(show_spinner=False)
-def _resolve_cached(scene_index: int, company: str, player: str) -> dict:
-    """Calcul une seule fois par (scène, entreprise, joueur) — résultat mis en cache."""
+def _resolve_cached(scene_index: int, company: str, player: str, gender: str = "f") -> dict:
+    """Calcul une seule fois par (scène, entreprise, joueur, genre) — résultat mis en cache."""
     scenario = SCENARIOS[scene_index]
     result = scenario
     if company != "NovaCorp":
@@ -23,6 +46,7 @@ def _resolve_cached(scene_index: int, company: str, player: str) -> dict:
         player_lower = player.split()[0].lower()
         result = _deep_replace(result, "Alice", player)
         result = _deep_replace(result, "alice", player_lower)
+    result = _apply_gender(result, gender)
     return result
 
 
@@ -30,6 +54,7 @@ def resolve_scenario(scenario: dict) -> dict:
     """Wrapper qui lit session_state et délègue au cache."""
     company = (st.session_state.get("company_name") or "NovaCorp").strip() or "NovaCorp"
     player  = (st.session_state.get("display_name") or "Alice").strip() or "Alice"
+    gender  = st.session_state.get("gender", "f")
 
     # Retrouve l'index pour la clé de cache
     scene_index = next(
@@ -38,7 +63,7 @@ def resolve_scenario(scenario: dict) -> dict:
     )
     if scene_index is None:
         return scenario
-    return _resolve_cached(scene_index, company, player)
+    return _resolve_cached(scene_index, company, player, gender)
 
 
 SCENARIOS = [
@@ -249,7 +274,7 @@ SCENARIOS = [
                 "consequence_title": "Menace neutralisée",
                 "consequence_story": (
                     "Alice remet la clé à Charlie, le responsable sécurité. "
-                    "Analysée en environnement isolé (sandbox), elle contient effectivement un script malveillant. "
+                    "Analysée en environnement isolé (sandbox), la clé contient effectivement un script malveillant. "
                     "Charlie alerte l'équipe et envoie une note de sensibilisation à tous les employés."
                 ),
                 "lesson": (

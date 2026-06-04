@@ -75,6 +75,8 @@ def init_game_state() -> None:
         st.session_state.user_id = None  # None → affiche l'écran d'authentification
     if "role" not in st.session_state:
         st.session_state.role = "player"
+    if "gender" not in st.session_state:
+        st.session_state.gender = "f"
 
 
 def _auto_save() -> None:
@@ -108,6 +110,7 @@ def reset_game_progress() -> None:
     company_name = st.session_state.get("company_name")
     display_name = st.session_state.get("display_name")
     role         = st.session_state.get("role", "player")
+    gender       = st.session_state.get("gender", "f")
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     init_game_state()
@@ -115,6 +118,7 @@ def reset_game_progress() -> None:
     st.session_state.company_name = company_name
     st.session_state.display_name = display_name
     st.session_state.role         = role
+    st.session_state.gender       = gender
 
 
 def _clear_outcome() -> None:

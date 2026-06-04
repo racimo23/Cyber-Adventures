@@ -22,9 +22,9 @@ from ui.cards import (
 
 
 @st.cache_data(show_spinner=False)
-def _cached_left_col_html(scene_index: int, company: str, player: str) -> str:
+def _cached_left_col_html(scene_index: int, company: str, player: str, gender: str = "f") -> str:
     """Scène card + dialogues en un seul bloc HTML — calculé une fois par scène/utilisateur."""
-    s = _resolve_cached(scene_index, company, player)
+    s = _resolve_cached(scene_index, company, player, gender)
     html = scene_card_html(s["scene_card"]["title"], s["scene_card"]["body"])
     for d in s["dialogues"]:
         html += dialogue_html(d["speaker"], d["text"], d.get("avatar", "💬"))
@@ -32,15 +32,15 @@ def _cached_left_col_html(scene_index: int, company: str, player: str) -> str:
 
 
 @st.cache_data(show_spinner=False)
-def _cached_artifact_html(scene_index: int, company: str, player: str) -> str:
+def _cached_artifact_html(scene_index: int, company: str, player: str, gender: str = "f") -> str:
     """HTML de l'artefact (email/fichier/…) — calculé une fois par scène/utilisateur."""
-    s = _resolve_cached(scene_index, company, player)
+    s = _resolve_cached(scene_index, company, player, gender)
     return artifact_html(s["artifact"])
 
 
 @st.cache_data(show_spinner=False)
-def _cached_hero_html(scene_index: int, company: str, player: str) -> str:
-    s = _resolve_cached(scene_index, company, player)
+def _cached_hero_html(scene_index: int, company: str, player: str, gender: str = "f") -> str:
+    s = _resolve_cached(scene_index, company, player, gender)
     return hero_card_html(s["hero"], s["day"], s["difficulty"])
 
 
@@ -438,7 +438,8 @@ def render_game_view() -> None:
     idx       = st.session_state.scene_index
     company   = st.session_state.get("company_name") or "NovaCorp"
     player    = st.session_state.get("display_name") or "Alice"
-    scenario  = _resolve_cached(idx, company, player)
+    gender    = st.session_state.get("gender", "f")
+    scenario  = _resolve_cached(idx, company, player, gender)
     total     = len(SCENARIOS)
     completed = len(st.session_state.completed_scenes)
 
@@ -453,7 +454,7 @@ def render_game_view() -> None:
     st.progress(completed / total)
 
     # Hero banner (cached HTML → 1 appel)
-    st.html(_cached_hero_html(idx, company, player))
+    st.html(_cached_hero_html(idx, company, player, gender))
 
     # Score — 1 seul score card (risque supprimé)
     render_score_card("Score sécurité", f"{st.session_state.score} / {SCORE_MAX}")
@@ -461,10 +462,10 @@ def render_game_view() -> None:
     left_col, right_col = st.columns([1.2, 1])
     with left_col:
         # Scène card + dialogues fusionnés en 1 appel HTML caché
-        st.html(_cached_left_col_html(idx, company, player))
+        st.html(_cached_left_col_html(idx, company, player, gender))
     with right_col:
         # Artefact en 1 appel HTML caché
-        st.html(_cached_artifact_html(idx, company, player))
+        st.html(_cached_artifact_html(idx, company, player, gender))
         if not st.session_state.answered and not st.session_state.get("viewing_completed"):
             _render_indices(scenario.get("indices", []))
 

@@ -1,6 +1,7 @@
 import time
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from config import APP_TITLE, APP_ICON
 from core.db import init_db, register_user, login_user, load_progress, validate_session_code, get_session_info
@@ -157,11 +158,6 @@ if st.session_state.user_id is None:
                 margin-bottom:4px; margin-top:12px; }
     .ap-hint  { font-family:'Inter',sans-serif; font-size:11px;
                 color:#94A3B8; margin-top:12px; text-align:center; }
-    /* Radio button — indicateur sélectionné bleu */
-    [data-baseweb="radio"] [role="radio"][aria-checked="true"] > div { border-color: #2A52BE !important; }
-    [data-baseweb="radio"] [role="radio"][aria-checked="true"] > div > div { background-color: #2A52BE !important; }
-    [data-baseweb="radio"] [role="radio"][aria-checked="true"] div:first-child { border-color: #2A52BE !important; }
-    [data-baseweb="radio"] [role="radio"][aria-checked="true"] div:first-child > div { background-color: #2A52BE !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -310,6 +306,32 @@ if st.session_state.user_id is None:
                     label_visibility="collapsed", key="inp_gender",
                 )
                 gender = "m" if genre_choice == "Homme" else "f"
+                components.html(
+                    """<script>
+                    (function(){
+                        var C='#2A52BE';
+                        function paint(){
+                            var p=window.parent.document;
+                            p.querySelectorAll('[data-baseweb="radio"]').forEach(function(r){
+                                var ch=r.querySelector('[aria-checked="true"]');
+                                if(!ch) return;
+                                var outer=ch.firstElementChild;
+                                if(outer){
+                                    outer.style.setProperty('border-color',C,'important');
+                                    if(outer.firstElementChild)
+                                        outer.firstElementChild.style.setProperty('background-color',C,'important');
+                                }
+                            });
+                        }
+                        setTimeout(paint,50);
+                        new MutationObserver(paint).observe(
+                            window.parent.document.body,
+                            {childList:true,subtree:true,attributes:true,attributeFilter:['aria-checked']}
+                        );
+                    })();
+                    </script>""",
+                    height=0,
+                )
 
                 fn_col, ln_col = st.columns(2)
                 with fn_col:

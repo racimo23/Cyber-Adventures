@@ -157,14 +157,6 @@ if st.session_state.user_id is None:
                 margin-bottom:4px; margin-top:12px; }
     .ap-hint  { font-family:'Inter',sans-serif; font-size:11px;
                 color:#94A3B8; margin-top:12px; text-align:center; }
-    /* Radio genre — indicateur bleu app */
-    [data-testid="stRadio"] [role="radio"][aria-checked="true"] > div:first-child {
-        border-color: #2A52BE !important;
-        background-color: #2A52BE !important;
-    }
-    [data-testid="stRadio"] [role="radio"][aria-checked="true"] > div:first-child > div {
-        background-color: #ffffff !important;
-    }
     </style>
     """, unsafe_allow_html=True)
 

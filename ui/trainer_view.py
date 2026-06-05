@@ -181,28 +181,52 @@ def _render_question_stats(players: list[dict]) -> None:
             # Camembert — outerRadius calculé automatiquement (pas de coupure)
             df_pie = df.copy()
             df_pie["label_court"] = df_pie["Choix"].str[:40]
-            pie = (
-                alt.Chart(df_pie)
-                .mark_arc(innerRadius=60)
-                .encode(
-                    theta=alt.Theta("Joueurs:Q"),
-                    color=alt.Color(
-                        "label_court:N",
-                        scale=alt.Scale(
-                            range=["#2A52BE", "#F59E0B", "#EF4444", "#10B981"]
-                        ),
-                        legend=None,   # légende supprimée — le tableau au-dessus suffit
+            # Labels % sur chaque tranche
+            df_pie = df.copy()
+            df_pie["label_court"] = df_pie["Choix"].str[:38]
+            df_pie["pct_label"]   = df_pie["%"].apply(lambda v: f"{v}%" if v > 0 else "")
+
+            base = alt.Chart(df_pie)
+
+            arc = base.mark_arc(innerRadius=70).encode(
+                theta=alt.Theta("Joueurs:Q"),
+                color=alt.Color(
+                    "label_court:N",
+                    scale=alt.Scale(range=["#2A52BE", "#F59E0B", "#EF4444", "#10B981"]),
+                    legend=alt.Legend(
+                        title=None,
+                        orient="right",
+                        labelLimit=320,
+                        symbolSize=140,
+                        labelFontSize=13,
+                        rowPadding=10,
                     ),
-                    tooltip=["Choix:N", "Joueurs:Q",
-                             alt.Tooltip("%:Q", title="% joueurs")],
-                )
-                .properties(width=380, height=380)
-                .configure_view(stroke=None)
+                ),
+                tooltip=["Choix:N", "Joueurs:Q",
+                         alt.Tooltip("%:Q", title="% joueurs")],
             )
+
+            labels = (
+                base
+                .transform_filter(alt.datum.Joueurs > 0)
+                .mark_text(radius=110, fontSize=14, fontWeight="bold", color="white")
+                .encode(
+                    theta=alt.Theta("Joueurs:Q", stack=True),
+                    text=alt.Text("pct_label:N"),
+                )
+            )
+
+            pie = (
+                (arc + labels)
+                .properties(width=300, height=300)
+                .configure_view(stroke=None)
+                .configure_legend(padding=20)
+            )
+
             st.markdown("<br>", unsafe_allow_html=True)
-            _, col_c, _ = st.columns([1, 1, 1])
+            _, col_c, _ = st.columns([1, 3, 1])
             with col_c:
-                st.altair_chart(pie, use_container_width=False)
+                st.altair_chart(pie, use_container_width=True)
 
 
 # ── Carte de session ─────────────────────────────────────────────────

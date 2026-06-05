@@ -366,7 +366,7 @@ def _generate_certificate(display_name: str, company: str, score: int,
     pdf.set_font("Sans", "", 9.5)
     pdf.set_text_color(*GRAY)
     pdf.set_xy(RX, 52)
-    pdf.cell(RW - 10, 7, "DE RÉUSSITE EN CYBERSÉCURITÉ", align="L")
+    pdf.cell(RW - 10, 7, "FORMATION SENSIBILISATION À LA CYBERSÉCURITÉ", align="L")
 
     # "Décerné à"
     pdf.set_font("Sans", "", 10)

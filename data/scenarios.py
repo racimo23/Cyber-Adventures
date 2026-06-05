@@ -32,6 +32,14 @@ def _apply_gender(result, gender: str):
     result = _deep_replace(result, "une nouvelle employée", "un nouvel employé")
     result = _deep_replace(result, "une nouvelle", "un nouveau")
     result = _deep_replace(result, "nouvelle employée", "nouvel employé")  # autres déterminants
+    # Adjectifs attributs ou appositions liés au personnage
+    result = _deep_replace(result, "est prête à", "est prêt à")
+    result = _deep_replace(result, ", prête à", ", prêt à")
+    result = _deep_replace(result, "est pressée de", "est pressé de")
+    result = _deep_replace(result, ", rassurée ", ", rassuré ")
+    result = _deep_replace(result, ", épuisée ", ", épuisé ")
+    # Formule de politesse
+    result = _deep_replace(result, "Chère ", "Cher ")
     return result
 
 

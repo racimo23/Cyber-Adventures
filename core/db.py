@@ -122,19 +122,33 @@ def init_db() -> None:
             created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""")
 
-    # Migrations — chaque ALTER dans sa propre connexion pour éviter qu'un échec
-    # (colonne déjà présente) ne mette toute la transaction PostgreSQL en erreur.
-    for migration in [
-        "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'player'",
-        "ALTER TABLE users ADD COLUMN session_code TEXT",
-        "ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT 'f'",
-        "ALTER TABLE sessions ADD COLUMN company_name TEXT DEFAULT ''",
-    ]:
-        try:
-            with _db() as conn:
-                _run(conn, migration)
-        except Exception:
-            pass  # colonne déjà présente
+    # Migrations — IF NOT EXISTS (PostgreSQL 9.6+) rend chaque ALTER idempotent.
+    # Pour SQLite, IF NOT EXISTS n'existe pas : on garde try/except.
+    if _PG:
+        pg_migrations = [
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'player'",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS session_code TEXT",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS gender TEXT NOT NULL DEFAULT 'f'",
+            "ALTER TABLE sessions ADD COLUMN IF NOT EXISTS company_name TEXT DEFAULT ''",
+        ]
+        for sql in pg_migrations:
+            try:
+                with _db() as conn:
+                    _run(conn, sql)
+            except Exception:
+                pass
+    else:
+        for sql in [
+            "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'player'",
+            "ALTER TABLE users ADD COLUMN session_code TEXT",
+            "ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT 'f'",
+            "ALTER TABLE sessions ADD COLUMN company_name TEXT DEFAULT ''",
+        ]:
+            try:
+                with _db() as conn:
+                    _run(conn, sql)
+            except Exception:
+                pass  # colonne déjà présente
 
 
 # ── Auth ─────────────────────────────────────────────────────────────
@@ -240,8 +254,22 @@ def _gen_code() -> str:
     return "CYBER-" + "".join(random.choices(_CODE_CHARS, k=6))
 
 
+def _ensure_sessions_company_col() -> None:
+    """Garantit que la colonne company_name existe dans sessions (migration défensive)."""
+    if _PG:
+        sql = "ALTER TABLE sessions ADD COLUMN IF NOT EXISTS company_name TEXT DEFAULT ''"
+    else:
+        sql = "ALTER TABLE sessions ADD COLUMN company_name TEXT DEFAULT ''"
+    try:
+        with _db() as conn:
+            _run(conn, sql)
+    except Exception:
+        pass  # colonne déjà présente (SQLite) ou autre erreur bénigne
+
+
 def create_session(trainer_id: int, name: str, company_name: str = "") -> str:
     """Crée une session et retourne son code unique."""
+    _ensure_sessions_company_col()
     for _ in range(10):
         code = _gen_code()
         try:

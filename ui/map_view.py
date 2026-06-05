@@ -48,6 +48,11 @@ def _render_logout() -> None:
         )
     with col_btn:
         if st.button("🚪 Quitter", use_container_width=True, key="logout_btn"):
+            from core.db import delete_auth_token
+            _tok = st.query_params.get("auth", "")
+            if _tok:
+                delete_auth_token(_tok)
+                del st.query_params["auth"]
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             st.rerun()

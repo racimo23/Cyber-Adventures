@@ -28,9 +28,10 @@ def _apply_gender(result, gender: str):
     # Pronom sujet minuscule au milieu après virgule ou point-virgule
     result = _deep_replace(result, ", elle ", ", il ")
     result = _deep_replace(result, "; elle ", "; il ")
-    # Accords adjectivaux liés au personnage
-    result = _deep_replace(result, "nouvelle employée", "nouvel employé")
+    # Accords adjectivaux — phrases complètes d'abord pour éviter les articles orphelins
+    result = _deep_replace(result, "une nouvelle employée", "un nouvel employé")
     result = _deep_replace(result, "une nouvelle", "un nouveau")
+    result = _deep_replace(result, "nouvelle employée", "nouvel employé")  # autres déterminants
     return result
 
 

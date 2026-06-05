@@ -273,6 +273,11 @@ def render_trainer_dashboard() -> None:
     # ── Déconnexion ─────────────────────────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("🚪 Se déconnecter", key="trainer_logout"):
+        from core.db import delete_auth_token
+        _tok = st.query_params.get("auth", "")
+        if _tok:
+            delete_auth_token(_tok)
+            del st.query_params["auth"]
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()

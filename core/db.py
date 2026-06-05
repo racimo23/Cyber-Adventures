@@ -3,7 +3,9 @@ import json
 import os
 import random
 import string
+import uuid
 from contextlib import contextmanager
+from datetime import datetime, timedelta
 from pathlib import Path
 
 # ── Détection du driver ─────────────────────────────────────────────
@@ -120,6 +122,12 @@ def init_db() -> None:
             name         TEXT NOT NULL,
             company_name TEXT DEFAULT '',
             created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+        _run(conn, f"""
+        CREATE TABLE IF NOT EXISTS auth_tokens (
+            token      TEXT PRIMARY KEY,
+            user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            expires_at TIMESTAMP NOT NULL
         )""")
 
     # Migrations — IF NOT EXISTS (PostgreSQL 9.6+) rend chaque ALTER idempotent.
@@ -374,3 +382,37 @@ def validate_session_code(code: str) -> bool:
     with _db() as conn:
         row = _one(conn, f"SELECT id FROM sessions WHERE code = {_PH}", (code.strip().upper(),))
     return row is not None
+
+
+# ── Tokens de session persistante ────────────────────────────────────
+
+def create_auth_token(user_id: int, days: int = 30) -> str:
+    """Crée un token de session persistant (30 jours par défaut)."""
+    token = str(uuid.uuid4())
+    expires = (datetime.utcnow() + timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+    with _db() as conn:
+        _run(conn,
+             f"INSERT INTO auth_tokens (token, user_id, expires_at) VALUES ({_PH},{_PH},{_PH})",
+             (token, user_id, expires))
+    return token
+
+
+def validate_auth_token(token: str) -> dict | None:
+    """Valide un token et retourne les infos utilisateur si valide, sinon None."""
+    with _db() as conn:
+        return _one(conn, f"""
+            SELECT u.id, u.username, u.display_name, u.company_name, u.role,
+                   COALESCE(u.gender, 'f') AS gender
+            FROM auth_tokens t
+            JOIN users u ON t.user_id = u.id
+            WHERE t.token = {_PH} AND t.expires_at > CURRENT_TIMESTAMP
+        """, (token,))
+
+
+def delete_auth_token(token: str) -> None:
+    """Supprime un token (lors de la déconnexion)."""
+    try:
+        with _db() as conn:
+            _run(conn, f"DELETE FROM auth_tokens WHERE token = {_PH}", (token,))
+    except Exception:
+        pass

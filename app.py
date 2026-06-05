@@ -4,7 +4,9 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from config import APP_TITLE, APP_ICON
-from core.db import init_db, register_user, login_user, load_progress, validate_session_code, get_session_info
+from core.db import (init_db, register_user, login_user, load_progress,
+                     validate_session_code, get_session_info,
+                     create_auth_token, validate_auth_token, delete_auth_token)
 from core.game_state import init_game_state, restore_progress
 from data.scenarios import SCENARIOS, resolve_scenario
 from ui.layout import apply_global_styles, render_header
@@ -28,6 +30,26 @@ def _setup_db():
 _setup_db()
 init_game_state()
 apply_global_styles()
+
+# ── Restauration de session depuis l'URL (?auth=<token>) ─────────────
+if not st.session_state.get("user_id") and not st.session_state.get("_auth_checked"):
+    st.session_state["_auth_checked"] = True
+    _tok = st.query_params.get("auth", "")
+    if _tok:
+        _user = validate_auth_token(_tok)
+        if _user:
+            st.session_state.user_id      = _user["id"]
+            st.session_state.display_name = _user["display_name"]
+            st.session_state.company_name = _user.get("company_name", "")
+            st.session_state.role         = _user.get("role", "player")
+            st.session_state.gender       = _user.get("gender", "f")
+            _saved = load_progress(_user["id"])
+            if _saved:
+                restore_progress(_saved)
+            st.rerun()
+        else:
+            # Token expiré ou invalide — nettoyer l'URL
+            del st.query_params["auth"]
 
 # ── Lecture du code de session depuis l'URL (?session=CYBER-XXXXX) ──
 if "url_session_checked" not in st.session_state:
@@ -265,6 +287,7 @@ if st.session_state.user_id is None:
                 st.session_state.display_name = user["display_name"]
                 st.session_state.company_name = user.get("company_name", "")
                 st.session_state.role         = "trainer"
+                st.query_params["auth"] = create_auth_token(user["id"])
                 st.rerun()
 
             st.html("<div style='height:16px'></div>")
@@ -453,6 +476,7 @@ if st.session_state.user_id is None:
                 if saved:
                     restore_progress(saved)
 
+                st.query_params["auth"] = create_auth_token(user["id"])
                 st.rerun()
 
             if mode == "register":

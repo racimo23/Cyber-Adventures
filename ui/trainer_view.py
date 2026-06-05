@@ -183,7 +183,7 @@ def _render_question_stats(players: list[dict]) -> None:
             df_pie["label_court"] = df_pie["Choix"].str[:40]
             pie = (
                 alt.Chart(df_pie)
-                .mark_arc(innerRadius=55)   # pas d'outerRadius → calculé par min(w,h)/2
+                .mark_arc(innerRadius=60)
                 .encode(
                     theta=alt.Theta("Joueurs:Q"),
                     color=alt.Color(
@@ -191,23 +191,18 @@ def _render_question_stats(players: list[dict]) -> None:
                         scale=alt.Scale(
                             range=["#2A52BE", "#F59E0B", "#EF4444", "#10B981"]
                         ),
-                        legend=alt.Legend(
-                            title="Réponses",
-                            orient="bottom",
-                            columns=1,
-                            labelLimit=500,
-                        ),
+                        legend=None,   # légende supprimée — le tableau au-dessus suffit
                     ),
                     tooltip=["Choix:N", "Joueurs:Q",
                              alt.Tooltip("%:Q", title="% joueurs")],
                 )
-                .properties(height=400, padding={"top": 40, "bottom": 20, "left": 20, "right": 20})
+                .properties(width=380, height=380)
                 .configure_view(stroke=None)
             )
             st.markdown("<br>", unsafe_allow_html=True)
-            _, col_c, _ = st.columns([1, 2, 1])
+            _, col_c, _ = st.columns([1, 1, 1])
             with col_c:
-                st.altair_chart(pie, use_container_width=True)
+                st.altair_chart(pie, use_container_width=False)
 
 
 # ── Carte de session ─────────────────────────────────────────────────

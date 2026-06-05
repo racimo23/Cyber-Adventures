@@ -178,12 +178,12 @@ def _render_question_stats(players: list[dict]) -> None:
                 use_container_width=True, hide_index=True,
             )
 
-            # Camembert centré et grand
+            # Camembert — outerRadius calculé automatiquement (pas de coupure)
             df_pie = df.copy()
-            df_pie["label_court"] = df_pie["Choix"].str[:35]
+            df_pie["label_court"] = df_pie["Choix"].str[:40]
             pie = (
                 alt.Chart(df_pie)
-                .mark_arc(innerRadius=60, outerRadius=180)
+                .mark_arc(innerRadius=55)   # pas d'outerRadius → calculé par min(w,h)/2
                 .encode(
                     theta=alt.Theta("Joueurs:Q"),
                     color=alt.Color(
@@ -195,16 +195,17 @@ def _render_question_stats(players: list[dict]) -> None:
                             title="Réponses",
                             orient="bottom",
                             columns=1,
-                            labelLimit=400,
+                            labelLimit=500,
                         ),
                     ),
                     tooltip=["Choix:N", "Joueurs:Q",
                              alt.Tooltip("%:Q", title="% joueurs")],
                 )
-                .properties(width=460, height=420, title="")
+                .properties(height=380)
+                .configure_view(stroke=None)
             )
-            _, col_center, _ = st.columns([1, 3, 1])
-            with col_center:
+            _, col_c, _ = st.columns([1, 2, 1])
+            with col_c:
                 st.altair_chart(pie, use_container_width=True)
 
 

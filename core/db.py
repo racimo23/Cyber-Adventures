@@ -118,6 +118,7 @@ def init_db() -> None:
             trainer_id   INTEGER NOT NULL REFERENCES users(id),
             code         TEXT UNIQUE NOT NULL,
             name         TEXT NOT NULL,
+            company_name TEXT DEFAULT '',
             created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""")
 
@@ -127,7 +128,7 @@ def init_db() -> None:
         "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'player'",
         "ALTER TABLE users ADD COLUMN session_code TEXT",
         "ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT 'f'",
-        "ALTER TABLE sessions ADD COLUMN company_name TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE sessions ADD COLUMN company_name TEXT DEFAULT ''",
     ]:
         try:
             with _db() as conn:
@@ -284,11 +285,12 @@ def get_trainer_sessions(trainer_id: int) -> list[dict]:
     with _db() as conn:
         rows = _all(conn, f"""
             SELECT s.id, s.code, s.name, s.created_at,
+                   COALESCE(s.company_name, '') AS company_name,
                    COUNT(u.id) AS nb_players
             FROM sessions s
             LEFT JOIN users u ON u.session_code = s.code
             WHERE s.trainer_id = {_PH}
-            GROUP BY s.id, s.code, s.name, s.created_at
+            GROUP BY s.id, s.code, s.name, s.created_at, s.company_name
             ORDER BY s.created_at DESC
         """, (trainer_id,))
     return rows

@@ -298,6 +298,7 @@ def delete_session(session_id: int, trainer_id: int) -> bool:
 
 def get_session_info(code: str) -> dict | None:
     """Retourne le nom de session + formateur + entreprise pour affichage au joueur."""
+    _ensure_sessions_company_col()
     with _db() as conn:
         return _one(conn, f"""
             SELECT s.name AS session_name, u.display_name AS trainer_name,
@@ -310,6 +311,7 @@ def get_session_info(code: str) -> dict | None:
 
 def get_trainer_sessions(trainer_id: int) -> list[dict]:
     """Retourne toutes les sessions d'un formateur avec le nombre de joueurs."""
+    _ensure_sessions_company_col()
     with _db() as conn:
         rows = _all(conn, f"""
             SELECT s.id, s.code, s.name, s.created_at,

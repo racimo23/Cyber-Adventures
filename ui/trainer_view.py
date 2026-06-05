@@ -201,9 +201,10 @@ def _render_question_stats(players: list[dict]) -> None:
                     tooltip=["Choix:N", "Joueurs:Q",
                              alt.Tooltip("%:Q", title="% joueurs")],
                 )
-                .properties(height=380)
+                .properties(height=400, padding={"top": 40, "bottom": 20, "left": 20, "right": 20})
                 .configure_view(stroke=None)
             )
+            st.markdown("<br>", unsafe_allow_html=True)
             _, col_c, _ = st.columns([1, 2, 1])
             with col_c:
                 st.altair_chart(pie, use_container_width=True)

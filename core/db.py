@@ -254,30 +254,52 @@ def _gen_code() -> str:
     return "CYBER-" + "".join(random.choices(_CODE_CHARS, k=6))
 
 
-def _ensure_sessions_company_col() -> None:
-    """Garantit que la colonne company_name existe dans sessions (migration défensive)."""
-    if _PG:
-        sql = "ALTER TABLE sessions ADD COLUMN IF NOT EXISTS company_name TEXT DEFAULT ''"
-    else:
-        sql = "ALTER TABLE sessions ADD COLUMN company_name TEXT DEFAULT ''"
+def _add_company_col(conn) -> bool:
+    """
+    Ajoute company_name à sessions dans la connexion COURANTE via SAVEPOINT.
+    - Vérifie d'abord information_schema (évite un ALTER inutile).
+    - SAVEPOINT garantit que la transaction reste valide si l'ALTER échoue.
+    - Retourne True si la colonne est utilisable, False en dernier recours.
+    """
+    if not _PG:
+        # SQLite : on suppose que init_db() a réussi la migration
+        return True
+    cur = conn.cursor()
+    # Vérification rapide : la colonne existe-t-elle déjà ?
+    cur.execute(
+        "SELECT 1 FROM information_schema.columns "
+        "WHERE table_schema = 'public' AND table_name = 'sessions' AND column_name = 'company_name'",
+    )
+    if cur.fetchone():
+        return True
+    # Tentative d'ajout protégée par SAVEPOINT
+    cur.execute("SAVEPOINT _sp_company")
     try:
-        with _db() as conn:
-            _run(conn, sql)
+        cur.execute("ALTER TABLE sessions ADD COLUMN company_name TEXT DEFAULT ''")
+        cur.execute("RELEASE SAVEPOINT _sp_company")
+        return True
     except Exception:
-        pass  # colonne déjà présente (SQLite) ou autre erreur bénigne
+        cur.execute("ROLLBACK TO SAVEPOINT _sp_company")
+        return False  # l'app fonctionne sans la colonne (fallback ci-dessous)
 
 
 def create_session(trainer_id: int, name: str, company_name: str = "") -> str:
     """Crée une session et retourne son code unique."""
-    _ensure_sessions_company_col()
     for _ in range(10):
         code = _gen_code()
         try:
             with _db() as conn:
-                _run(conn,
-                     f"INSERT INTO sessions (trainer_id, code, name, company_name)"
-                     f" VALUES ({_PH},{_PH},{_PH},{_PH})",
-                     (trainer_id, code, name.strip(), company_name.strip()))
+                has_col = _add_company_col(conn)
+                if has_col:
+                    _run(conn,
+                         f"INSERT INTO sessions (trainer_id, code, name, company_name)"
+                         f" VALUES ({_PH},{_PH},{_PH},{_PH})",
+                         (trainer_id, code, name.strip(), company_name.strip()))
+                else:
+                    _run(conn,
+                         f"INSERT INTO sessions (trainer_id, code, name)"
+                         f" VALUES ({_PH},{_PH},{_PH})",
+                         (trainer_id, code, name.strip()))
             return code
         except _ERR_UNIQUE:
             continue
@@ -298,11 +320,12 @@ def delete_session(session_id: int, trainer_id: int) -> bool:
 
 def get_session_info(code: str) -> dict | None:
     """Retourne le nom de session + formateur + entreprise pour affichage au joueur."""
-    _ensure_sessions_company_col()
     with _db() as conn:
+        has_col = _add_company_col(conn)
+        co_sel = "COALESCE(s.company_name, '') AS company_name" if has_col else "'' AS company_name"
         return _one(conn, f"""
             SELECT s.name AS session_name, u.display_name AS trainer_name,
-                   COALESCE(s.company_name, '') AS company_name
+                   {co_sel}
             FROM sessions s
             JOIN users u ON s.trainer_id = u.id
             WHERE s.code = {_PH}
@@ -311,16 +334,18 @@ def get_session_info(code: str) -> dict | None:
 
 def get_trainer_sessions(trainer_id: int) -> list[dict]:
     """Retourne toutes les sessions d'un formateur avec le nombre de joueurs."""
-    _ensure_sessions_company_col()
     with _db() as conn:
+        has_col = _add_company_col(conn)
+        co_sel = "COALESCE(s.company_name, '') AS company_name," if has_col else "'' AS company_name,"
+        co_grp = ", s.company_name" if has_col else ""
         rows = _all(conn, f"""
             SELECT s.id, s.code, s.name, s.created_at,
-                   COALESCE(s.company_name, '') AS company_name,
+                   {co_sel}
                    COUNT(u.id) AS nb_players
             FROM sessions s
             LEFT JOIN users u ON u.session_code = s.code
             WHERE s.trainer_id = {_PH}
-            GROUP BY s.id, s.code, s.name, s.created_at, s.company_name
+            GROUP BY s.id, s.code, s.name, s.created_at{co_grp}
             ORDER BY s.created_at DESC
         """, (trainer_id,))
     return rows

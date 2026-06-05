@@ -172,36 +172,40 @@ def _render_question_stats(players: list[dict]) -> None:
                 })
             df = pd.DataFrame(rows)
 
-            col_tab, col_pie = st.columns([1, 1])
+            # Tableau de résultats
+            st.dataframe(
+                df[["Résultat", "Choix", "Joueurs", "%"]].rename(columns={"%": "% joueurs"}),
+                use_container_width=True, hide_index=True,
+            )
 
-            with col_tab:
-                st.dataframe(
-                    df[["Résultat", "Choix", "Joueurs", "%"]].rename(columns={"%": "% joueurs"}),
-                    use_container_width=True, hide_index=True,
-                )
-
-            with col_pie:
-                # Camembert Altair — inclure tous les choix (même à 0)
-                df_pie = df.copy()
-                df_pie["label_court"] = df_pie["Choix"].str[:30]
-                pie = (
-                    alt.Chart(df_pie)
-                    .mark_arc(innerRadius=40)
-                    .encode(
-                        theta=alt.Theta("Joueurs:Q"),
-                        color=alt.Color(
-                            "label_court:N",
-                            scale=alt.Scale(
-                                range=["#2A52BE", "#F59E0B", "#EF4444", "#10B981"]
-                            ),
-                            legend=alt.Legend(title="Choix"),
+            # Camembert centré et grand
+            df_pie = df.copy()
+            df_pie["label_court"] = df_pie["Choix"].str[:35]
+            pie = (
+                alt.Chart(df_pie)
+                .mark_arc(innerRadius=60, outerRadius=180)
+                .encode(
+                    theta=alt.Theta("Joueurs:Q"),
+                    color=alt.Color(
+                        "label_court:N",
+                        scale=alt.Scale(
+                            range=["#2A52BE", "#F59E0B", "#EF4444", "#10B981"]
                         ),
-                        tooltip=["Choix:N", "Joueurs:Q",
-                                 alt.Tooltip("%:Q", title="% joueurs")],
-                    )
-                    .properties(width=240, height=240)
+                        legend=alt.Legend(
+                            title="Réponses",
+                            orient="bottom",
+                            columns=1,
+                            labelLimit=400,
+                        ),
+                    ),
+                    tooltip=["Choix:N", "Joueurs:Q",
+                             alt.Tooltip("%:Q", title="% joueurs")],
                 )
-                st.altair_chart(pie, use_container_width=False)
+                .properties(width=460, height=420, title="")
+            )
+            _, col_center, _ = st.columns([1, 3, 1])
+            with col_center:
+                st.altair_chart(pie, use_container_width=True)
 
 
 # ── Carte de session ─────────────────────────────────────────────────

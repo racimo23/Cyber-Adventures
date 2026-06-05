@@ -47,8 +47,11 @@ def _apply_gender(result, gender: str):
     return result
 
 
+_GENDER_V = 3  # incrémenter pour invalider le cache après correctif d'accords
+
 @st.cache_data(show_spinner=False)
-def _resolve_cached(scene_index: int, company: str, player: str, gender: str = "f") -> dict:
+def _resolve_cached(scene_index: int, company: str, player: str,
+                    gender: str = "f", _v: int = _GENDER_V) -> dict:
     """Calcul une seule fois par (scène, entreprise, joueur, genre) — résultat mis en cache."""
     scenario = SCENARIOS[scene_index]
     result = scenario
@@ -56,7 +59,7 @@ def _resolve_cached(scene_index: int, company: str, player: str, gender: str = "
         result = _deep_replace(result, "NovaCorp", company)
         result = _deep_replace(result, "novacorp", company.lower())
     if player != "Alice":
-        first_name  = player.split()[0]          # "Racim" depuis "Racim Ouarglir"
+        first_name  = player.split()[0]
         first_lower = first_name.lower()
         result = _deep_replace(result, "Alice", first_name)
         result = _deep_replace(result, "alice", first_lower)

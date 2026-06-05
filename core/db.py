@@ -377,6 +377,41 @@ def get_session_players(session_code: str) -> list[dict]:
     return rows
 
 
+def delete_player(user_id: int, trainer_id: int) -> bool:
+    """Supprime un joueur si sa session appartient au formateur. Retourne True si supprimé."""
+    with _db() as conn:
+        row = _one(conn, f"""
+            SELECT u.id FROM users u
+            JOIN sessions s ON u.session_code = s.code
+            WHERE u.id = {_PH} AND s.trainer_id = {_PH} AND u.role = 'player'
+        """, (user_id, trainer_id))
+        if row is None:
+            return False
+        _run(conn, f"DELETE FROM auth_tokens WHERE user_id = {_PH}", (user_id,))
+        _run(conn, f"DELETE FROM progress WHERE user_id = {_PH}", (user_id,))
+        _run(conn, f"DELETE FROM users WHERE id = {_PH}", (user_id,))
+    return True
+
+
+def get_all_trainer_players(trainer_id: int) -> list[dict]:
+    """Retourne tous les joueurs de toutes les sessions du formateur."""
+    with _db() as conn:
+        rows = _all(conn, f"""
+            SELECT u.id, u.display_name, u.company_name, u.username, u.created_at,
+                   s.name AS session_name, s.code AS session_code,
+                   COALESCE(p.score, 0)              AS score,
+                   COALESCE(p.completed_scenes, '{{}}') AS completed_scenes
+            FROM users u
+            JOIN sessions s ON u.session_code = s.code
+            LEFT JOIN progress p ON p.user_id = u.id
+            WHERE s.trainer_id = {_PH} AND u.role = 'player'
+            ORDER BY s.created_at DESC, score DESC
+        """, (trainer_id,))
+    for r in rows:
+        r["completed_scenes"] = json.loads(r["completed_scenes"])
+    return rows
+
+
 def validate_session_code(code: str) -> bool:
     """Vérifie qu'un code de session existe."""
     with _db() as conn:

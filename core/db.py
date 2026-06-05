@@ -386,11 +386,20 @@ def validate_session_code(code: str) -> bool:
 
 # ── Tokens de session persistante ────────────────────────────────────
 
+_CREATE_AUTH_TOKENS = """
+CREATE TABLE IF NOT EXISTS auth_tokens (
+    token      TEXT PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TIMESTAMP NOT NULL
+)"""
+
+
 def create_auth_token(user_id: int, days: int = 30) -> str:
     """Crée un token de session persistant (30 jours par défaut)."""
     token = str(uuid.uuid4())
     expires = (datetime.utcnow() + timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
     with _db() as conn:
+        _run(conn, _CREATE_AUTH_TOKENS)   # idempotent — crée la table si absente
         _run(conn,
              f"INSERT INTO auth_tokens (token, user_id, expires_at) VALUES ({_PH},{_PH},{_PH})",
              (token, user_id, expires))
@@ -400,6 +409,7 @@ def create_auth_token(user_id: int, days: int = 30) -> str:
 def validate_auth_token(token: str) -> dict | None:
     """Valide un token et retourne les infos utilisateur si valide, sinon None."""
     with _db() as conn:
+        _run(conn, _CREATE_AUTH_TOKENS)   # idempotent
         return _one(conn, f"""
             SELECT u.id, u.username, u.display_name, u.company_name, u.role,
                    COALESCE(u.gender, 'f') AS gender
@@ -413,6 +423,7 @@ def delete_auth_token(token: str) -> None:
     """Supprime un token (lors de la déconnexion)."""
     try:
         with _db() as conn:
+            _run(conn, _CREATE_AUTH_TOKENS)   # idempotent
             _run(conn, f"DELETE FROM auth_tokens WHERE token = {_PH}", (token,))
     except Exception:
         pass

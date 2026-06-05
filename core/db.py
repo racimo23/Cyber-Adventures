@@ -127,6 +127,7 @@ def init_db() -> None:
         "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'player'",
         "ALTER TABLE users ADD COLUMN session_code TEXT",
         "ALTER TABLE users ADD COLUMN gender TEXT NOT NULL DEFAULT 'f'",
+        "ALTER TABLE sessions ADD COLUMN company_name TEXT NOT NULL DEFAULT ''",
     ]:
         try:
             with _db() as conn:
@@ -238,26 +239,40 @@ def _gen_code() -> str:
     return "CYBER-" + "".join(random.choices(_CODE_CHARS, k=6))
 
 
-def create_session(trainer_id: int, name: str) -> str:
+def create_session(trainer_id: int, name: str, company_name: str = "") -> str:
     """Crée une session et retourne son code unique."""
     for _ in range(10):
         code = _gen_code()
         try:
             with _db() as conn:
                 _run(conn,
-                     f"INSERT INTO sessions (trainer_id, code, name) VALUES ({_PH},{_PH},{_PH})",
-                     (trainer_id, code, name.strip()))
+                     f"INSERT INTO sessions (trainer_id, code, name, company_name)"
+                     f" VALUES ({_PH},{_PH},{_PH},{_PH})",
+                     (trainer_id, code, name.strip(), company_name.strip()))
             return code
         except _ERR_UNIQUE:
             continue
     raise RuntimeError("Impossible de générer un code unique.")
 
 
+def delete_session(session_id: int, trainer_id: int) -> bool:
+    """Supprime une session si elle appartient au formateur. Retourne True si supprimé."""
+    with _db() as conn:
+        row = _one(conn,
+                   f"SELECT id FROM sessions WHERE id = {_PH} AND trainer_id = {_PH}",
+                   (session_id, trainer_id))
+        if row is None:
+            return False
+        _run(conn, f"DELETE FROM sessions WHERE id = {_PH}", (session_id,))
+    return True
+
+
 def get_session_info(code: str) -> dict | None:
-    """Retourne le nom de session + formateur pour affichage au joueur."""
+    """Retourne le nom de session + formateur + entreprise pour affichage au joueur."""
     with _db() as conn:
         return _one(conn, f"""
-            SELECT s.name AS session_name, u.display_name AS trainer_name
+            SELECT s.name AS session_name, u.display_name AS trainer_name,
+                   COALESCE(s.company_name, '') AS company_name
             FROM sessions s
             JOIN users u ON s.trainer_id = u.id
             WHERE s.code = {_PH}

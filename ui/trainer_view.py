@@ -4,7 +4,7 @@ from datetime import datetime
 
 import streamlit as st
 
-from core.db import create_session, get_trainer_sessions, get_session_players
+from core.db import create_session, delete_session, get_trainer_sessions, get_session_players
 from data.scenarios import SCENARIOS
 
 _OUTCOME_ICON = {"success": "✅", "neutral": "⚠️", "danger": "🚨"}
@@ -99,11 +99,22 @@ def _render_create_session() -> None:
     with st.expander("➕ Créer une nouvelle session", expanded=False):
         name = st.text_input("Nom de la session", placeholder="ex : Formation Cyber — Équipe RH",
                               key="new_session_name")
+        st.markdown(
+            '<div style="font-family:Inter,sans-serif;font-size:11px;font-weight:700;'
+            'color:#64748B;letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px;">'
+            'Entreprise imposée aux joueurs '
+            '<span style="font-weight:400;color:#CBD5E1">(optionnel)</span></div>',
+            unsafe_allow_html=True,
+        )
+        company_name = st.text_input(
+            "company_session", placeholder="ex : NovaCorp — sera prérempli pour chaque joueur",
+            label_visibility="collapsed", key="new_session_company",
+        )
         if st.button("Créer la session", key="create_session_btn", type="primary"):
             if not name.strip():
                 st.error("Donne un nom à la session.")
             else:
-                code = create_session(st.session_state.user_id, name)
+                code = create_session(st.session_state.user_id, name, company_name)
                 st.session_state["_new_session_code"] = code
                 st.rerun()
 
@@ -123,11 +134,16 @@ def _share_link(code: str) -> str:
 
 
 def _render_session_card(session: dict) -> None:
-    nb     = session.get("nb_players", 0)
-    code   = session["code"]
-    date_s = _format_date(session.get("created_at"))
-    link   = _share_link(code)
+    nb        = session.get("nb_players", 0)
+    code      = session["code"]
+    date_s    = _format_date(session.get("created_at"))
+    link      = _share_link(code)
+    company   = session.get("company_name", "") or ""
+    sid       = session["id"]
 
+    company_pill = (
+        f'<div class="tr-stat-pill">🏢 {company}</div>' if company else ""
+    )
     st.html(f"""
     <div class="tr-session-card">
       <div class="tr-session-header">
@@ -139,10 +155,29 @@ def _render_session_card(session: dict) -> None:
       </div>
       <div class="tr-stat-row">
         <div class="tr-stat-pill">👥 {nb} joueur{'s' if nb != 1 else ''}</div>
-        <div class="tr-stat-pill">🔗 Lien ci-dessous</div>
+        {company_pill}
       </div>
     </div>
     """)
+
+    # ── Bouton supprimer ─────────────────────────────────────────────
+    confirm_key = f"_confirm_del_{sid}"
+    if not st.session_state.get(confirm_key):
+        if st.button("🗑️ Supprimer la session", key=f"del_btn_{sid}"):
+            st.session_state[confirm_key] = True
+            st.rerun()
+    else:
+        st.warning(f"Supprimer **{session['name']}** ? Tous les joueurs de cette session resteront dans la base mais la session sera effacée.")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Oui, supprimer", key=f"confirm_del_{sid}", type="primary"):
+                delete_session(sid, st.session_state.user_id)
+                del st.session_state[confirm_key]
+                st.rerun()
+        with c2:
+            if st.button("Annuler", key=f"cancel_del_{sid}"):
+                del st.session_state[confirm_key]
+                st.rerun()
 
     # Lien à partager — st.code() ajoute automatiquement un bouton "Copier"
     st.markdown(

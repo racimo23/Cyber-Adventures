@@ -356,26 +356,25 @@ if st.session_state.user_id is None:
                                       label_visibility="collapsed", key=f"inp_pass_{mode}")
 
             if mode == "register":
-                st.markdown(
-                    '<div class="ap-label">Entreprise '
-                    '<span style="font-weight:400;color:#CBD5E1">(optionnel)</span></div>',
-                    unsafe_allow_html=True)
-                company = st.text_input("co", placeholder="NovaCorp",
-                                         label_visibility="collapsed", key="inp_company")
-
-                # Détection automatique du code de session (via URL ou saisie manuelle)
+                # Détection du code de session (URL ou saisie) — avant l'entreprise
+                # car la session peut imposer l'entreprise
                 pending_code = st.session_state.get("_pending_session_code", "")
+                session_info = None
                 if pending_code:
-                    info = get_session_info(pending_code)
-                    if info:
+                    session_info = get_session_info(pending_code)
+                    if session_info:
+                        co_line = (
+                            f" · <strong>{session_info['company_name']}</strong>"
+                            if session_info.get("company_name") else ""
+                        )
                         st.html(f"""
                         <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:10px;
                              padding:10px 14px;margin-top:10px;font-family:'Inter',sans-serif;">
                           <div style="font-size:12px;font-weight:700;color:#15803D;margin-bottom:2px;">
                             🎓 Session détectée</div>
                           <div style="font-size:13px;color:#166534;">
-                            <strong>{info['session_name']}</strong>
-                            — formateur : {info['trainer_name']}</div>
+                            <strong>{session_info['session_name']}</strong>
+                            — formateur : {session_info['trainer_name']}{co_line}</div>
                         </div>
                         """)
                         session_code_input = pending_code
@@ -392,6 +391,31 @@ if st.session_state.user_id is None:
                         "sc", placeholder="ex : CYBER-A3F7B2",
                         label_visibility="collapsed", key="inp_session_code",
                     ).strip().upper()
+                    # Charger les infos si le joueur vient de taper un code
+                    if session_code_input:
+                        session_info = get_session_info(session_code_input)
+
+                # Entreprise — verrouillée si la session l'impose, sinon saisie libre
+                forced_company = (session_info or {}).get("company_name", "") if session_info else ""
+                if forced_company:
+                    st.html(
+                        f'<div style="font-family:Inter,sans-serif;font-size:11px;font-weight:700;'
+                        f'color:#64748B;letter-spacing:.5px;text-transform:uppercase;margin:12px 0 4px;">'
+                        f'Entreprise</div>'
+                        f'<div style="background:#F1F5F9;border:1.5px solid #E2E8F0;border-radius:10px;'
+                        f'padding:10px 14px;font-family:Inter,sans-serif;font-size:14px;color:#475569;'
+                        f'margin-bottom:4px;">🏢 {forced_company}</div>'
+                        f'<div style="font-size:11px;color:#94A3B8;font-family:Inter,sans-serif;'
+                        f'margin-bottom:6px;">Définie par le formateur — non modifiable</div>'
+                    )
+                    company = forced_company
+                else:
+                    st.markdown(
+                        '<div class="ap-label">Entreprise '
+                        '<span style="font-weight:400;color:#CBD5E1">(optionnel)</span></div>',
+                        unsafe_allow_html=True)
+                    company = st.text_input("co", placeholder="NovaCorp",
+                                             label_visibility="collapsed", key="inp_company")
             else:
                 company = ""
                 session_code_input = ""

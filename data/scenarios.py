@@ -30,9 +30,6 @@ def _apply_gender(result, gender: str):
     result = _deep_replace(result, "; elle ", "; il ")
     # Accords adjectivaux — phrases complètes d'abord pour éviter les articles orphelins
     result = _deep_replace(result, "une nouvelle employée", "un nouvel employé")
-    result = _deep_replace(result, "une nouvelle", "un nouveau")
-    result = _deep_replace(result, "nouvelle employée", "nouvel employé")  # autres déterminants
-    # Pronoms non couverts par la boucle principale (après des mots spécifiques)
     result = _deep_replace(result, "Mais elle ", "Mais il ")
     result = _deep_replace(result, "puis elle ", "puis il ")
     result = _deep_replace(result, "lequel elle ", "lequel il ")

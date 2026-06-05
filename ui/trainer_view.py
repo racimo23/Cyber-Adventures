@@ -65,13 +65,14 @@ def _format_date(ts) -> str:
 
 def _build_csv(players: list[dict], include_session: bool = False) -> str:
     buf = io.StringIO()
+    # Séparateur ";" pour compatibilité Excel France + quoting automatique
+    writer = csv.writer(buf, delimiter=";", quoting=csv.QUOTE_ALL)
     base_cols = ["Nom", "Pseudo", "Entreprise", "Score", "Missions terminées", "Inscription"]
     if include_session:
         base_cols = ["Session"] + base_cols
-    mission_cols = [f"J{s['day']} — {s['title']}" for s in SCENARIOS]
-    choice_cols  = [f"J{s['day']} choix" for s in SCENARIOS]
+    mission_cols = [f"J{s['day']} - {s['title']}" for s in SCENARIOS]
+    choice_cols  = [f"J{s['day']} résultat" for s in SCENARIOS]
     headers = base_cols + [item for pair in zip(mission_cols, choice_cols) for item in pair]
-    writer = csv.writer(buf)
     writer.writerow(headers)
     for p in players:
         cs = p.get("completed_scenes", {})
@@ -89,10 +90,10 @@ def _build_csv(players: list[dict], include_session: bool = False) -> str:
         for s in SCENARIOS:
             data = cs.get(s["id"])
             if data:
-                row.append(_OUTCOME_ICON.get(data.get("outcome", ""), "—"))
                 row.append(data.get("chosen_label", "—"))
+                row.append(_OUTCOME_ICON.get(data.get("outcome", ""), "—"))
             else:
-                row.append("—")
+                row.append("Non joué")
                 row.append("—")
         writer.writerow(row)
     return buf.getvalue()
@@ -127,33 +128,80 @@ def _render_player_detail(p: dict) -> None:
 
 def _render_question_stats(players: list[dict]) -> None:
     import pandas as pd
+    import altair as alt
 
     if not players:
         st.caption("Aucun joueur pour afficher les statistiques.")
         return
 
-    # Pour chaque scénario, compter les choix
+    nb_total = len(players)
+
     for s in SCENARIOS:
         sid = s["id"]
-        # Collecter les choix de tous les joueurs pour ce scénario
-        choice_counts: dict[str, int] = {}
+
+        # Compter les choix de TOUS les joueurs (y compris 0)
+        choice_counts: dict[str, int] = {c["label"]: 0 for c in s["choices"]}
         nb_played = 0
         for p in players:
             data = p.get("completed_scenes", {}).get(sid)
             if data:
                 nb_played += 1
-                label = data.get("chosen_label", "Inconnu")
-                choice_counts[label] = choice_counts.get(label, 0) + 1
+                label = data.get("chosen_label", "")
+                if label in choice_counts:
+                    choice_counts[label] += 1
 
-        if nb_played == 0:
-            continue  # personne n'a joué ce scénario
+        label_header = f"J{s['day']} — {s['title']}  ({nb_played}/{nb_total} joueurs)"
+        with st.expander(label_header, expanded=False):
+            if nb_played == 0:
+                st.caption("Personne n'a encore joué cette mission.")
+                continue
 
-        with st.expander(f"J{s['day']} — {s['title']} ({nb_played}/{len(players)} joueurs)"):
+            # Construire le DataFrame avec tous les choix
+            outcome_map = {c["label"]: c["outcome"] for c in s["choices"]}
             rows = []
-            for label, count in sorted(choice_counts.items(), key=lambda x: -x[1]):
-                pct = round(count / nb_played * 100)
-                rows.append({"Choix": label, "Joueurs": count, "%": f"{pct}%"})
-            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+            for c in s["choices"]:
+                lbl   = c["label"]
+                count = choice_counts[lbl]
+                pct   = round(count / nb_played * 100) if nb_played else 0
+                icon  = _OUTCOME_ICON.get(outcome_map.get(lbl, ""), "")
+                rows.append({
+                    "Résultat": icon,
+                    "Choix":    lbl,
+                    "Joueurs":  count,
+                    "%":        pct,
+                })
+            df = pd.DataFrame(rows)
+
+            col_tab, col_pie = st.columns([1, 1])
+
+            with col_tab:
+                st.dataframe(
+                    df[["Résultat", "Choix", "Joueurs", "%"]].rename(columns={"%": "% joueurs"}),
+                    use_container_width=True, hide_index=True,
+                )
+
+            with col_pie:
+                # Camembert Altair — inclure tous les choix (même à 0)
+                df_pie = df.copy()
+                df_pie["label_court"] = df_pie["Choix"].str[:30]
+                pie = (
+                    alt.Chart(df_pie)
+                    .mark_arc(innerRadius=40)
+                    .encode(
+                        theta=alt.Theta("Joueurs:Q"),
+                        color=alt.Color(
+                            "label_court:N",
+                            scale=alt.Scale(
+                                range=["#2A52BE", "#F59E0B", "#EF4444", "#10B981"]
+                            ),
+                            legend=alt.Legend(title="Choix"),
+                        ),
+                        tooltip=["Choix:N", "Joueurs:Q",
+                                 alt.Tooltip("%:Q", title="% joueurs")],
+                    )
+                    .properties(width=240, height=240)
+                )
+                st.altair_chart(pie, use_container_width=False)
 
 
 # ── Carte de session ─────────────────────────────────────────────────

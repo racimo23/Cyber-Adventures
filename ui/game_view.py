@@ -3,7 +3,7 @@ import random
 import streamlit as st
 import streamlit.components.v1 as components
 
-from core.scoring import apply_score_change, get_risk_label, get_player_profile, SCORE_MAX, RISK_MAX
+from core.scoring import apply_score_change, get_player_profile, SCORE_MAX
 from core.game_state import set_outcome, advance_scene, return_to_map, reset_game_progress
 from data.scenarios import SCENARIOS, resolve_scenario, _resolve_cached
 from ui.cards import (
@@ -436,7 +436,7 @@ def _generate_certificate(display_name: str, company: str, score: int,
 
 def _render_endgame() -> None:
     score     = st.session_state.score
-    profile   = get_player_profile(score, st.session_state.risk)
+    profile   = get_player_profile(score)
     completed = len(st.session_state.completed_scenes)
 
     outcomes   = [v["outcome"] for v in st.session_state.completed_scenes.values()]
@@ -499,14 +499,10 @@ def _render_endgame() -> None:
 # ── Core logic ────────────────────────────────────────────────────
 
 def handle_choice(choice: dict) -> None:
-    new_score, new_risk, risk_contribution = apply_score_change(
-        current_score=st.session_state.score,
-        current_risk=st.session_state.risk,
-        score_delta=choice["score_delta"],
-        risk_delta=choice["risk_delta"],
+    st.session_state.score = apply_score_change(
+        st.session_state.score,
+        choice["score_delta"],
     )
-    st.session_state.score = new_score
-    st.session_state.risk  = new_risk
     set_outcome(
         outcome=choice["outcome"],
         feedback=choice["feedback"],
@@ -515,7 +511,6 @@ def handle_choice(choice: dict) -> None:
         lesson=choice["lesson"],
         chosen_label=choice["label"],
         score_delta=choice["score_delta"],
-        risk_delta=risk_contribution,
     )
 
 

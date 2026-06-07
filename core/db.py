@@ -220,11 +220,10 @@ def save_progress(user_id: int, progress: dict) -> None:
     with _db() as conn:
         _run(conn, f"""
         INSERT INTO progress
-            (user_id, score, risk, scene_index, max_unlocked_scene, completed_scenes, updated_at)
-        VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph}, CURRENT_TIMESTAMP)
+            (user_id, score, scene_index, max_unlocked_scene, completed_scenes, updated_at)
+        VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, CURRENT_TIMESTAMP)
         ON CONFLICT(user_id) DO UPDATE SET
             score              = excluded.score,
-            risk               = excluded.risk,
             scene_index        = excluded.scene_index,
             max_unlocked_scene = excluded.max_unlocked_scene,
             completed_scenes   = excluded.completed_scenes,
@@ -232,7 +231,6 @@ def save_progress(user_id: int, progress: dict) -> None:
         """, (
             user_id,
             progress["score"],
-            progress["risk"],
             progress["scene_index"],
             progress["max_unlocked_scene"],
             json.dumps(progress["completed_scenes"]),
@@ -246,7 +244,6 @@ def load_progress(user_id: int) -> dict | None:
         return None
     return {
         "score":              row["score"],
-        "risk":               row["risk"],
         "scene_index":        row["scene_index"],
         "max_unlocked_scene": row["max_unlocked_scene"],
         "completed_scenes":   json.loads(row["completed_scenes"]),

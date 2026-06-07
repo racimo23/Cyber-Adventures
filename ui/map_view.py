@@ -3,7 +3,7 @@ import random
 import streamlit as st
 
 from core.game_state import select_scene, view_completed_scene
-from core.scoring import get_risk_label, SCORE_MAX, RISK_MAX
+from core.scoring import SCORE_MAX
 from data.scenarios import SCENARIOS, resolve_scenario
 
 _NODES_PER_ROW = 4
@@ -63,7 +63,6 @@ def _render_map_header() -> None:
     completed = len(st.session_state.completed_scenes)
     total = len(SCENARIOS)
     score = st.session_state.score
-    risk = st.session_state.risk
     all_done = completed == total
 
     successes = sum(
@@ -98,10 +97,6 @@ def _render_map_header() -> None:
             <div class="map-stat-pill">
                 <span class="map-stat-icon">⭐</span>
                 <span class="map-stat-text">Score : {score} / {SCORE_MAX}</span>
-            </div>
-            <div class="map-stat-pill">
-                <span class="map-stat-icon">🛡️</span>
-                <span class="map-stat-text">Risque : {get_risk_label(risk)}</span>
             </div>
         </div>
     </div>

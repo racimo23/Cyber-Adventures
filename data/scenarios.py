@@ -149,7 +149,6 @@ SCENARIOS = [
             {
                 "label": "Cliquer sur le lien",
                 "score_delta": 0,
-                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Tu as cliqué sur un lien de phishing.",
                 "consequence_title": "Compte compromis",
@@ -167,7 +166,6 @@ SCENARIOS = [
             {
                 "label": "Vérifier le domaine et contacter l'IT",
                 "score_delta": 7,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Tu as identifié un domaine suspect.",
                 "consequence_title": "Menace évitée",
@@ -184,7 +182,6 @@ SCENARIOS = [
             {
                 "label": "Répondre avec ses identifiants",
                 "score_delta": 0,
-                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Tu as transmis des informations sensibles par email.",
                 "consequence_title": "Identifiants exposés",
@@ -201,7 +198,6 @@ SCENARIOS = [
             {
                 "label": "Transférer l'email à tous les collègues pour les prévenir",
                 "score_delta": 4,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Bonne intention, mais tu viens de propager le lien de phishing.",
                 "consequence_title": "Alerte mal gérée",
@@ -268,7 +264,6 @@ SCENARIOS = [
             {
                 "label": "La brancher sur mon PC pro pour identifier le propriétaire",
                 "score_delta": 0,
-                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Brancher une clé inconnue, c'est risqué.",
                 "consequence_title": "Malware installé",
@@ -285,7 +280,6 @@ SCENARIOS = [
             {
                 "label": "La remettre au service sécurité IT sans la brancher",
                 "score_delta": 5,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "La bonne réaction face à un support inconnu.",
                 "consequence_title": "Menace neutralisée",
@@ -302,7 +296,6 @@ SCENARIOS = [
             {
                 "label": "La brancher sur mon PC personnel chez moi ce soir",
                 "score_delta": 0,
-                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Ton PC perso n'est pas protégé non plus.",
                 "consequence_title": "Réseau personnel compromis",
@@ -319,7 +312,6 @@ SCENARIOS = [
             {
                 "label": "La déposer à l'accueil de l'immeuble",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu évites le danger immédiat mais tu transfères le risque.",
                 "consequence_title": "Risque déplacé",
@@ -390,7 +382,6 @@ SCENARIOS = [
             {
                 "label": "Utiliser 'NovaCorp2024!'",
                 "score_delta": 0,
-                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Ce mot de passe est trop prévisible pour un accès critique.",
                 "consequence_title": "Compte CRM compromis",
@@ -407,7 +398,6 @@ SCENARIOS = [
             {
                 "label": "Utiliser un gestionnaire de mots de passe",
                 "score_delta": 7,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "La meilleure pratique pour des mots de passe forts et uniques.",
                 "consequence_title": "Accès sécurisé",
@@ -424,7 +414,6 @@ SCENARIOS = [
             {
                 "label": "Utiliser 'P@$$w0rd_alice.martin2'",
                 "score_delta": 4,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Les substitutions de lettres (@ pour a) sont connues des attaquants.",
                 "consequence_title": "Mot de passe trop prévisible",
@@ -441,7 +430,6 @@ SCENARIOS = [
             {
                 "label": "Réutiliser mon mot de passe habituel — il est déjà fort",
                 "score_delta": 0,
-                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Un bon mot de passe réutilisé partout reste une bombe à retardement.",
                 "consequence_title": "Credential stuffing réussi",
@@ -515,7 +503,6 @@ SCENARIOS = [
             {
                 "label": "Partir en laissant le bureau tel quel — personne ne regardera",
                 "score_delta": 0,
-                "risk_delta": 3,
                 "outcome": "danger",
                 "feedback": "Le bureau non sécurisé représente une violation de la politique interne.",
                 "consequence_title": "Violation de la Clean Desk Policy",
@@ -534,7 +521,6 @@ SCENARIOS = [
             {
                 "label": "Ranger le badge, jeter le post-it, fermer le dossier et verrouiller le PC",
                 "score_delta": 4,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "60 secondes de rangement pour éviter une semaine d'incident — ça vaut le coup.",
                 "consequence_title": "Bureau sécurisé",
@@ -553,7 +539,6 @@ SCENARIOS = [
             {
                 "label": "Cacher le dossier sous d'autres papiers et partir vite",
                 "score_delta": 2,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Un dossier caché reste accessible — et le post-it et le badge sont toujours là.",
                 "consequence_title": "Sécurité partielle",
@@ -571,7 +556,6 @@ SCENARIOS = [
             {
                 "label": "Appeler un collègue pour qu'il range à sa place",
                 "score_delta": 2,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu délègues la sécurité de tes accès à quelqu'un d'autre.",
                 "consequence_title": "Responsabilité transférée",
@@ -644,7 +628,6 @@ SCENARIOS = [
             {
                 "label": "Continuer à travailler — j'en ai besoin pour la réunion",
                 "score_delta": 0,
-                "risk_delta": 3,
                 "outcome": "danger",
                 "feedback": "Tu as exposé des données confidentielles dans un lieu public.",
                 "consequence_title": "Données visibles photographiées",
@@ -663,7 +646,6 @@ SCENARIOS = [
             {
                 "label": "Fermer l'écran et travailler sur des documents non sensibles",
                 "score_delta": 5,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Bonne décision — les données confidentielles restent confidentielles.",
                 "consequence_title": "Données protégées",
@@ -681,7 +663,6 @@ SCENARIOS = [
             {
                 "label": "Réduire la luminosité de l'écran au minimum",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Ça réduit la visibilité mais ne protège pas vraiment.",
                 "consequence_title": "Protection insuffisante",
@@ -699,7 +680,6 @@ SCENARIOS = [
             {
                 "label": "Se retourner et confronter le passager directement",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "La confrontation crée une tension sans protéger les données déjà vues.",
                 "consequence_title": "Incident inutile",
@@ -774,7 +754,6 @@ SCENARIOS = [
             {
                 "label": "Utiliser le site recommandé par Bob — c'est rapide",
                 "score_delta": 0,
-                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Le contrat confidentiel vient d'être uploadé sur un serveur tiers non contrôlé.",
                 "consequence_title": "Violation de la clause de confidentialité",
@@ -795,7 +774,6 @@ SCENARIOS = [
             {
                 "label": "Ouvrir le PDF directement avec Microsoft Word",
                 "score_delta": 5,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "L'outil Office 365 intégré fait le travail sans quitter l'environnement NovaCorp.",
                 "consequence_title": "Conversion sécurisée",
@@ -814,7 +792,6 @@ SCENARIOS = [
             {
                 "label": "Demander à l'IT de convertir le fichier à sa place",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Sécurisé, mais le service IT n'est pas un service de conversion de fichiers.",
                 "consequence_title": "Bonne intention, mauvais réflexe",
@@ -832,7 +809,6 @@ SCENARIOS = [
             {
                 "label": "Utiliser le site recommandé mais supprimer le fichier après",
                 "score_delta": 0,
-                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Supprimer côté client ne supprime pas les données côté serveur.",
                 "consequence_title": "Fausse sécurité",
@@ -909,7 +885,6 @@ SCENARIOS = [
             {
                 "label": "Lui donner mon mot de passe pour l'aider",
                 "score_delta": 0,
-                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Aucun technicien légitime ne demande un mot de passe par téléphone.",
                 "consequence_title": "Accès total compromis",
@@ -926,7 +901,6 @@ SCENARIOS = [
             {
                 "label": "Raccrocher et rappeler via l'annuaire officiel",
                 "score_delta": 6,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Vérifier avant d'agir — le bon réflexe.",
                 "consequence_title": "Tentative de vishing déjouée",
@@ -943,7 +917,6 @@ SCENARIOS = [
             {
                 "label": "Donner mon identifiant mais pas le mot de passe",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Mieux, mais ton identifiant a de la valeur pour l'attaquant.",
                 "consequence_title": "Exposition partielle",
@@ -960,7 +933,6 @@ SCENARIOS = [
             {
                 "label": "Lui demander d'envoyer un email officiel pour confirmer",
                 "score_delta": 0,
-                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "L'attaquant peut aussi falsifier un email.",
                 "consequence_title": "Vishing + Phishing enchaînés",
@@ -1036,7 +1008,6 @@ SCENARIOS = [
             {
                 "label": "Cliquer sur 'Installer maintenant'",
                 "score_delta": 0,
-                "risk_delta": 6,
                 "outcome": "danger",
                 "feedback": "Un ransomware vient de chiffrer tes fichiers.",
                 "consequence_title": "Ransomware déclenché",
@@ -1055,7 +1026,6 @@ SCENARIOS = [
             {
                 "label": "Fermer le popup et appeler l'IT",
                 "score_delta": 7,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Signaler avant d'agir — la bonne démarche.",
                 "consequence_title": "Malware bloqué",
@@ -1072,7 +1042,6 @@ SCENARIOS = [
             {
                 "label": "Cliquer sur 'Plus tard' pour l'ignorer",
                 "score_delta": 4,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Ajourner ne résout pas le problème.",
                 "consequence_title": "Menace en suspens",
@@ -1089,7 +1058,6 @@ SCENARIOS = [
             {
                 "label": "Prendre une capture d'écran et l'archiver sans rien signaler",
                 "score_delta": 4,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Documenter c'est bien, mais signaler c'est indispensable.",
                 "consequence_title": "Information non exploitée",
@@ -1164,7 +1132,6 @@ SCENARIOS = [
             {
                 "label": "Se connecter et travailler directement",
                 "score_delta": 0,
-                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Tu as exposé des données confidentielles sur un réseau public.",
                 "consequence_title": "Données interceptées",
@@ -1181,7 +1148,6 @@ SCENARIOS = [
             {
                 "label": "Activer le VPN NovaCorp avant de se connecter",
                 "score_delta": 6,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Bonne pratique — le VPN chiffre tout le trafic.",
                 "consequence_title": "Connexion sécurisée",
@@ -1198,7 +1164,6 @@ SCENARIOS = [
             {
                 "label": "Désactiver le mode avion et utiliser son 4G",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "La 4G est plus sûre mais sans VPN tu contournes la charte.",
                 "consequence_title": "Solution partielle",
@@ -1215,7 +1180,6 @@ SCENARIOS = [
             {
                 "label": "Créer un partage de connexion avec son téléphone",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Mieux que le WiFi public, mais sans VPN tu restes hors charte.",
                 "consequence_title": "Hotspot sans VPN",
@@ -1289,7 +1253,6 @@ SCENARIOS = [
             {
                 "label": "Coller le rapport complet dans ChatGPT",
                 "score_delta": 0,
-                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Des données confidentielles viennent de quitter le périmètre de NovaCorp.",
                 "consequence_title": "Fuite de données vers un tiers",
@@ -1308,7 +1271,6 @@ SCENARIOS = [
             {
                 "label": "Utiliser l'outil IA interne approuvé par NovaCorp",
                 "score_delta": 6,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Le bon outil pour le bon usage — les données restent dans le périmètre.",
                 "consequence_title": "Résumé sécurisé",
@@ -1326,7 +1288,6 @@ SCENARIOS = [
             {
                 "label": "Anonymiser les données sensibles avant de les coller",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Mieux, mais l'anonymisation manuelle est rarement complète.",
                 "consequence_title": "Anonymisation incomplète",
@@ -1344,7 +1305,6 @@ SCENARIOS = [
             {
                 "label": "Résumer le document manuellement sans IA",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Sécurisé, mais tu n'as pas utilisé les ressources approuvées disponibles.",
                 "consequence_title": "Travail sécurisé mais inefficace",
@@ -1418,7 +1378,6 @@ SCENARIOS = [
             {
                 "label": "Accepter et lui envoyer le CV avec mes projets actuels",
                 "score_delta": 0,
-                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Tu viens de livrer des informations stratégiques à un concurrent potentiel.",
                 "consequence_title": "Espionnage industriel",
@@ -1438,7 +1397,6 @@ SCENARIOS = [
             {
                 "label": "Vérifier le profil et signaler à la DSI avant de répondre",
                 "score_delta": 5,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Bonne vigilance — vérifier avant d'agir protège l'entreprise.",
                 "consequence_title": "Tentative d'OSINT déjouée",
@@ -1457,7 +1415,6 @@ SCENARIOS = [
             {
                 "label": "Accepter la connexion sans donner d'informations",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu lui donnes accès à ton réseau et tes informations publiques.",
                 "consequence_title": "Exposition partielle",
@@ -1475,7 +1432,6 @@ SCENARIOS = [
             {
                 "label": "Ignorer et bloquer le profil sans le signaler",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu te protèges, mais tes collègues restent exposés.",
                 "consequence_title": "Protection individuelle insuffisante",
@@ -1555,7 +1511,6 @@ SCENARIOS = [
             {
                 "label": "Tenir la porte et le laisser entrer — il a l'air légitime",
                 "score_delta": 0,
-                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "Tu viens de laisser entrer un inconnu dans une zone sécurisée.",
                 "consequence_title": "Intrusion physique réussie",
@@ -1574,7 +1529,6 @@ SCENARIOS = [
             {
                 "label": "Lui demander poliment de badger ou d'appeler son contact",
                 "score_delta": 6,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Bonne posture — appliquer la règle sans agressivité.",
                 "consequence_title": "Accès refusé, protocole respecté",
@@ -1593,7 +1547,6 @@ SCENARIOS = [
             {
                 "label": "L'accompagner à l'accueil pour régulariser son accès",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Mieux que de le laisser entrer, mais tu perds de vue la zone pendant ce temps.",
                 "consequence_title": "Protocole partiellement respecté",
@@ -1611,7 +1564,6 @@ SCENARIOS = [
             {
                 "label": "Le laisser entrer car il a l'air d'un collègue qu'on n'a pas encore rencontré",
                 "score_delta": 0,
-                "risk_delta": 5,
                 "outcome": "danger",
                 "feedback": "L'apparence n'est pas une preuve d'identité.",
                 "consequence_title": "Intrusion par social engineering",
@@ -1687,7 +1639,6 @@ SCENARIOS = [
             {
                 "label": "Récupérer les feuilles et faire comme si rien ne s'était passé",
                 "score_delta": 0,
-                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Ne pas signaler une exposition de données est une faute grave.",
                 "consequence_title": "Violation RGPD non déclarée",
@@ -1706,7 +1657,6 @@ SCENARIOS = [
             {
                 "label": "Récupérer les feuilles, signaler au DPO et utiliser l'impression sécurisée à l'avenir",
                 "score_delta": 5,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Réaction exemplaire : action immédiate + signalement + mesure corrective.",
                 "consequence_title": "Incident géré correctement",
@@ -1725,7 +1675,6 @@ SCENARIOS = [
             {
                 "label": "Demander à Bob de vérifier si quelqu'un a lu le document",
                 "score_delta": 3,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Mieux que rien, mais Bob n'est pas le bon interlocuteur.",
                 "consequence_title": "Signalement partiel",
@@ -1744,7 +1693,6 @@ SCENARIOS = [
             {
                 "label": "Annuler le travail d'impression depuis le PC pour effacer les traces",
                 "score_delta": 0,
-                "risk_delta": 4,
                 "outcome": "danger",
                 "feedback": "Le document est déjà imprimé — annuler le job ne change rien.",
                 "consequence_title": "Action inefficace",
@@ -1825,7 +1773,6 @@ SCENARIOS = [
             {
                 "label": "Effectuer le virement immédiatement",
                 "score_delta": 0,
-                "risk_delta": 8,
                 "outcome": "danger",
                 "feedback": "Tu viens de tomber dans un piège de fraude au président.",
                 "consequence_title": "47 500 € perdus",
@@ -1842,7 +1789,6 @@ SCENARIOS = [
             {
                 "label": "Appeler le PDG sur son numéro officiel pour vérifier",
                 "score_delta": 10,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Vérification multi-canal — le bon réflexe.",
                 "consequence_title": "Fraude déjouée",
@@ -1860,7 +1806,6 @@ SCENARIOS = [
             {
                 "label": "Transférer la demande à la comptabilité pour qu'elle gère",
                 "score_delta": 5,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu propagules la demande sans vérifier.",
                 "consequence_title": "La fraude continue",
@@ -1877,7 +1822,6 @@ SCENARIOS = [
             {
                 "label": "Demander au PDG de confirmer la demande par email d'entreprise",
                 "score_delta": 5,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Un email peut aussi être falsifié avec un domaine similaire.",
                 "consequence_title": "Fausse confirmation acceptée",
@@ -1951,7 +1895,6 @@ SCENARIOS = [
             {
                 "label": "Accepter une notification pour que ça s'arrête",
                 "score_delta": 0,
-                "risk_delta": 7,
                 "outcome": "danger",
                 "feedback": "Tu viens d'ouvrir la porte à l'attaquant.",
                 "consequence_title": "Compte compromis par fatigue MFA",
@@ -1970,7 +1913,6 @@ SCENARIOS = [
             {
                 "label": "Refuser toutes les notifications, changer le mot de passe et alerter l'IT",
                 "score_delta": 8,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Réaction exemplaire face à une attaque MFA.",
                 "consequence_title": "Attaque bloquée",
@@ -1989,7 +1931,6 @@ SCENARIOS = [
             {
                 "label": "Refuser les notifications mais ne rien signaler — ça s'arrêtera tout seul",
                 "score_delta": 4,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu résistes, mais l'attaquant garde ton mot de passe et réessaiera.",
                 "consequence_title": "Menace suspendue, pas éliminée",
@@ -2008,7 +1949,6 @@ SCENARIOS = [
             {
                 "label": "Accepter une notification en pensant que c'est un bug système",
                 "score_delta": 0,
-                "risk_delta": 7,
                 "outcome": "danger",
                 "feedback": "Un bug système n'envoie pas de demandes MFA depuis un appareil inconnu.",
                 "consequence_title": "Compromission par rationalisation",
@@ -2095,7 +2035,6 @@ SCENARIOS = [
             {
                 "label": "Désactiver l'antivirus officiel et installer le patch proposé",
                 "score_delta": 0,
-                "risk_delta": 7,
                 "outcome": "danger",
                 "feedback": "Tu viens d'installer un malware en désactivant ta protection.",
                 "consequence_title": "Poste compromis — malware installé",
@@ -2115,7 +2054,6 @@ SCENARIOS = [
             {
                 "label": "Ne pas cliquer et appeler l'IT via le numéro officiel",
                 "score_delta": 8,
-                "risk_delta": 0,
                 "outcome": "success",
                 "feedback": "Vérification par canal officiel — la bonne réaction.",
                 "consequence_title": "Scareware détecté et signalé",
@@ -2134,7 +2072,6 @@ SCENARIOS = [
             {
                 "label": "Prévenir son manager par email mais ne pas contacter l'IT",
                 "score_delta": 4,
-                "risk_delta": 0,
                 "outcome": "neutral",
                 "feedback": "Tu signales, mais au mauvais interlocuteur.",
                 "consequence_title": "Signalement inefficace",
@@ -2154,7 +2091,6 @@ SCENARIOS = [
             {
                 "label": "Désactiver temporairement l'AV 'juste pour voir' ce que le patch fait",
                 "score_delta": 0,
-                "risk_delta": 7,
                 "outcome": "danger",
                 "feedback": "Désactiver son antivirus pour tester un fichier suspect — l'erreur classique.",
                 "consequence_title": "Infection confirmée",

@@ -28,10 +28,6 @@ def hero_card_html(hero: dict, day: int, difficulty: str) -> str:
     )
 
 
-def render_hero_card(hero: dict, day: int, difficulty: str) -> None:
-    st.html(hero_card_html(hero, day, difficulty))
-
-
 def render_score_card(title: str, value: str) -> None:
     st.html(_load("score_card.html", title=title, value=value))
 
@@ -40,20 +36,11 @@ def scene_card_html(title: str, body: str) -> str:
     return _load("scene_card.html", title=title, body=body)
 
 
-def render_scene_card(title: str, body: str) -> None:
-    st.html(scene_card_html(title, body))
-
-
 def dialogue_html(speaker: str, text: str, avatar: str = "💬") -> str:
     return _load("dialogue.html", speaker=speaker, text=text, avatar=avatar)
 
 
-def render_dialogue(speaker: str, text: str, avatar: str = "💬") -> None:
-    st.html(dialogue_html(speaker, text, avatar))
-
-
 def artifact_html(artifact: dict) -> str:
-    """Retourne le HTML de l'artefact sans le rendre (pour cache)."""
     kind = artifact["type"]
     if kind == "email":
         sl = artifact["sender"][0].upper() if artifact["sender"] else "?"
@@ -83,24 +70,6 @@ def artifact_html(artifact: dict) -> str:
     return ""
 
 
-def render_email_card(sender: str, recipient: str, subject: str, body: str) -> None:
-    sl = sender[0].upper() if sender else "?"
-    st.html(_load("email_card.html", sender=sender, recipient=recipient,
-                  subject=subject, body=body, sender_letter=sl))
-
-
-def render_file_card(icon, label, filename, detail): st.html(_load("file_card.html", icon=icon, label=label, filename=filename, detail=detail))
-def render_phone_card(icon, caller, label, detail): st.html(_load("phone_card.html", icon=icon, caller=caller, label=label, detail=detail))
-def render_popup_card(title, message, timer, button_text): st.html(_load("popup_card.html", title=title, message=message, timer=timer, button_text=button_text))
-def render_wifi_card(icon, ssid, detail, security): st.html(_load("wifi_card.html", icon=icon, ssid=ssid, detail=detail, security=security))
-def render_form_card(title, field_label, field_value, hint): st.html(_load("form_card.html", title=title, field_label=field_label, field_value=field_value, hint=hint))
-
-
-def render_chat_card(sender: str, avatar: str, messages: list) -> None:
-    msgs_html = "".join(f'<div class="chat-bubble">{m}</div>' for m in messages)
-    st.html(_load("chat_card.html", sender=sender, avatar=avatar, messages_html=msgs_html))
-
-
 def render_consequence(outcome: str, title: str, feedback: str, story: str) -> None:
     css_class = {"danger": "danger-screen", "success": "success-screen"}.get(outcome, "neutral-screen")
     emoji     = {"danger": "🚨", "success": "✅"}.get(outcome, "ℹ️")
@@ -110,38 +79,3 @@ def render_consequence(outcome: str, title: str, feedback: str, story: str) -> N
 
 def render_lesson(lesson: str) -> None:
     st.markdown(_load("lesson.html", lesson=lesson), unsafe_allow_html=True)
-
-
-def render_typewriter_text(text: str, speed: str = "normal") -> None:
-    """Affiche du texte lettre par lettre (effet machine à écrire).
-    speed: 'slow' (70ms) | 'normal' (35ms) | 'fast' (15ms)
-    """
-    speed_ms = {"slow": 70, "normal": 35, "fast": 15}.get(speed, 35)
-    safe = text.replace("\\", "\\\\").replace("`", "\\`").replace("</", "<\\/")
-    html = f"""
-<style>
-@keyframes tw-blink{{from,to{{opacity:1;}}50%{{opacity:0;}}}}
-</style>
-<div style="
-  background:#ECE5DD;border-radius:0 12px 12px 12px;
-  padding:12px 16px 8px;max-width:92%;
-  font-size:14px;color:#1A1A1A;line-height:1.6;
-  box-shadow:0 1px 4px rgba(0,0,0,0.12);
-  font-family:'Inter',sans-serif;word-break:break-word;">
-  <span id="tw-out"></span><span id="tw-cur"
-    style="color:#075E54;animation:tw-blink .7s step-end infinite;font-weight:700;">▌</span>
-</div>
-<script>
-(function(){{
-  var t=`{safe}`,i=0,
-      el=document.getElementById('tw-out'),
-      cur=document.getElementById('tw-cur');
-  function type(){{
-    if(i<t.length){{el.textContent+=t[i++];setTimeout(type,{speed_ms});}}
-    else{{setTimeout(function(){{cur.style.display='none';}},900);}}
-  }}
-  type();
-}})();
-</script>"""
-    height = max(80, 52 + (len(text) // 48) * 26)
-    components.html(html, height=height)

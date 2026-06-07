@@ -1,46 +1,25 @@
-from config import (
-    RISK_LOW_THRESHOLD,
-    RISK_MEDIUM_THRESHOLD,
-)
-
-# Score max = somme des succès pondérés sur 16 scènes = 100
-# Risk max  = somme des risques danger pondérés sur 16 scènes = 80
 SCORE_MAX = 100
-RISK_MAX  = 80
-
-# risk_delta in scenarios is already the exact contribution (6 for danger, 0 otherwise)
-_RISK_SCALE = 1.0
 
 
 def clamp(value: int, minimum: int = 0, maximum: int = 100) -> int:
     return max(minimum, min(maximum, value))
 
 
-def apply_score_change(
-    current_score: int,
-    current_risk: int,
-    score_delta: int,
-    risk_delta: int,
-) -> tuple[int, int, int]:
-    new_score = clamp(current_score + score_delta, 0, SCORE_MAX)
-    risk_contribution = max(0, round(risk_delta * _RISK_SCALE))
-    new_risk = clamp(current_risk + risk_contribution, 0, RISK_MAX)
-    return new_score, new_risk, risk_contribution
+def apply_score_change(current_score: int, score_delta: int) -> int:
+    return clamp(current_score + score_delta, 0, SCORE_MAX)
 
 
-def get_player_profile(score: int, risk: int) -> dict:
-    """Retourne le profil joueur (8 niveaux) selon le score et le risque final."""
+def get_player_profile(score: int) -> dict:
+    pct = score / SCORE_MAX
 
-    # Level 8 — score parfait ET risque nul
-    if score >= SCORE_MAX and risk == 0:
+    if score >= SCORE_MAX:
         return {
             "level": 8,
             "badge": "👑",
             "title": "L'Élite Cyber",
             "comment": (
-                "Score parfait, risque nul. Tu as déjoué chaque menace sans exception "
-                "et sans compromis. Une maîtrise absolue des réflexes de sécurité. "
-                "NovaCorp t'offre le poste de Référent Cybersécurité."
+                "Score parfait, zéro erreur. Tu as déjoué chaque menace sans exception "
+                "et sans compromis. Une maîtrise absolue des réflexes de sécurité."
             ),
             "color": "#7C3AED",
             "bg": "linear-gradient(135deg,#F5F3FF,#EDE9FE)",
@@ -48,8 +27,6 @@ def get_player_profile(score: int, risk: int) -> dict:
             "bar_color": "#7C3AED",
         }
 
-    # Calculer le niveau de base selon le score
-    pct = score / SCORE_MAX
     if pct >= 0.90:
         level = 7
     elif pct >= 0.80:
@@ -65,21 +42,13 @@ def get_player_profile(score: int, risk: int) -> dict:
     else:
         level = 1
 
-    # Le risque peut abaisser le niveau
-    risk_pct = risk / RISK_MAX
-    if risk_pct > 0.75:
-        level = min(level, 1)
-    elif risk_pct > 0.50:
-        level = min(level, 2)
-
     _PROFILES = {
         7: {
             "badge": "🏰",
             "title": "Le Rempart Humain",
             "comment": (
                 "Excellente performance. Tu constitues une barrière solide contre les cybermenaces. "
-                "Quelques rares situations t'ont eu, mais tu restes un acteur clé "
-                "de la sécurité de NovaCorp."
+                "Quelques rares situations t'ont eu, mais tu restes un acteur clé de la sécurité."
             ),
             "color": "#1D4ED8",
             "bg": "linear-gradient(135deg,#EFF6FF,#DBEAFE)",
@@ -91,8 +60,7 @@ def get_player_profile(score: int, risk: int) -> dict:
             "title": "Le Gardien Averti",
             "comment": (
                 "Très bonne vigilance. Tu détectes la grande majorité des menaces. "
-                "Quelques angles morts subsistent mais le niveau est clairement au-dessus "
-                "de la moyenne. Continue à progresser."
+                "Quelques angles morts subsistent mais le niveau est clairement au-dessus de la moyenne."
             ),
             "color": "#0E7490",
             "bg": "linear-gradient(135deg,#ECFEFF,#CFFAFE)",
@@ -104,8 +72,7 @@ def get_player_profile(score: int, risk: int) -> dict:
             "title": "L'Employé Perfectible",
             "comment": (
                 "Bonne base de vigilance. Tu reconnais les menaces courantes mais "
-                "certaines situations complexes t'ont piégé. Une formation ciblée "
-                "t'amènerait au niveau supérieur."
+                "certaines situations complexes t'ont piégé."
             ),
             "color": "#166534",
             "bg": "linear-gradient(135deg,#F0FDF4,#DCFCE7)",
@@ -117,8 +84,7 @@ def get_player_profile(score: int, risk: int) -> dict:
             "title": "L'Électron Libre",
             "comment": (
                 "Résultat contrasté. Tes décisions sont parfois bonnes, parfois risquées "
-                "sans logique apparente. Il te manque un cadre systématique pour identifier "
-                "et réagir aux menaces."
+                "sans logique apparente."
             ),
             "color": "#92400E",
             "bg": "linear-gradient(135deg,#FFFBEB,#FEF3C7)",
@@ -130,7 +96,7 @@ def get_player_profile(score: int, risk: int) -> dict:
             "title": "Le Vecteur de Vulnérabilité",
             "comment": (
                 "Résultat préoccupant. Tu as mordu à des pièges qui auraient pu être évités. "
-                "NovaCorp t'inscrit en priorité au programme de sensibilisation renforcé."
+                "Une formation renforcée s'impose."
             ),
             "color": "#B45309",
             "bg": "linear-gradient(135deg,#FFF7ED,#FFEDD5)",
@@ -141,8 +107,8 @@ def get_player_profile(score: int, risk: int) -> dict:
             "badge": "🔥",
             "title": "Le Générateur d'Incidents",
             "comment": (
-                "Résultat alarmant. Plusieurs de tes décisions ont mis NovaCorp en danger réel. "
-                "Une remise à niveau urgente en cybersécurité s'impose immédiatement."
+                "Résultat alarmant. Plusieurs de tes décisions ont mis l'entreprise en danger réel. "
+                "Une remise à niveau urgente en cybersécurité s'impose."
             ),
             "color": "#9A3412",
             "bg": "linear-gradient(135deg,#FFF7ED,#FED7AA)",
@@ -151,11 +117,10 @@ def get_player_profile(score: int, risk: int) -> dict:
         },
         1: {
             "badge": "💀",
-            "title": "Le Fléau de NovaCorp",
+            "title": "Le Fléau",
             "comment": (
                 "Résultat critique. Tu as mordu à presque tous les hameçons et exposé l'entreprise "
-                "à des risques graves. Une formation complète et obligatoire est requise "
-                "en urgence absolue."
+                "à des risques graves. Une formation complète et obligatoire est requise."
             ),
             "color": "#991B1B",
             "bg": "linear-gradient(135deg,#FFF5F5,#FFE4E6)",
@@ -167,11 +132,3 @@ def get_player_profile(score: int, risk: int) -> dict:
     profile = _PROFILES[level]
     profile["level"] = level
     return profile
-
-
-def get_risk_label(human_risk: int) -> str:
-    if human_risk < RISK_LOW_THRESHOLD:
-        return "🟢 Faible"
-    if human_risk < RISK_MEDIUM_THRESHOLD:
-        return "🟠 Moyen"
-    return "🔴 Élevé"
